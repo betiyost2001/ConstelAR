@@ -16,3 +16,4 @@ __pycache__/
 # Vite/React
 *.DS_Store
 .vscode/
+.watchfiles
