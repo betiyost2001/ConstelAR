@@ -1,4 +1,4 @@
 fastapi==0.112.2
-uvicorn[standard]==0.30.6
+uvicorn==0.30.6
 requests==2.32.3
 watchfiles==0.22.0

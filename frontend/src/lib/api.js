@@ -1,17 +1,19 @@
+// frontend/src/lib/api.js
 const BASE = import.meta.env.VITE_API_URL || "http://localhost:8000";
 
-// POR CIUDAD (llama a tu backend)
-export async function getOpenAQLatestByCity(city, limit = 5) {
-  const url = `${BASE}/openaq/latest?city=${encodeURIComponent(city)}&limit=${limit}`;
-  const r = await fetch(url);
-  if (!r.ok) throw new Error(`Backend ${r.status}`);
-  return r.json();
-}
+export async function getNormalized({ lat, lon, limit = 50, radius = 100000 }) {
+  const qs = new URLSearchParams({
+    lat: String(lat),
+    lon: String(lon),
+    radius: String(radius),
+    limit: String(limit),
+  }).toString();
 
-// POR COORDENADAS (recomendada)
-export async function getOpenAQLatestByCoords(lat, lon, radius = 100000, limit = 10) {
-  const url = `${BASE}/openaq/latest?lat=${lat}&lon=${lon}&radius=${radius}&limit=${limit}`;
-  const r = await fetch(url);
-  if (!r.ok) throw new Error(`Backend ${r.status}`);
-  return r.json();
+  const url = `${BASE}/openaq/normalized?${qs}`;
+  const res = await fetch(url, { credentials: "include" });
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`API ${res.status} ${res.statusText} - ${text}`);
+  }
+  return res.json(); // { source, results }
 }

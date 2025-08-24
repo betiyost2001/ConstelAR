@@ -83,3 +83,79 @@ def latest(
         return {"source": "open-meteo/air-quality", "query": om_params, "data": {"results": out}}
     except requests.RequestException as e3:
         raise HTTPException(status_code=502, detail=f"Open-Meteo error: {e3}") from e3
+# --- helpers arriba del router.normalized (podés ponerlos junto a _get) ---
+def _normalize_openaq_measurements(items):
+    norm = []
+    for r in items:
+        try:
+            norm.append({
+                "lat": r["coordinates"]["latitude"],
+                "lon": r["coordinates"]["longitude"],
+                "parameter": r["parameter"],
+                "value": r["value"],
+                "unit": r.get("unit", ""),
+                "datetime": r["date"]["utc"],
+            })
+        except KeyError:
+            continue
+    return norm
+
+def _fetch_openmeteo(lat, lon, limit):
+    om_params = {
+        "latitude": lat,
+        "longitude": lon,
+        "hourly": "pm2_5,pm10,ozone",
+        "past_days": 0,
+        "forecast_days": 1,
+    }
+    raw = _get(OMQ, om_params)
+    results = []
+    hourly = raw.get("hourly", {})
+    times = hourly.get("time", []) or []
+    for i, t in enumerate(times):
+        for param in ["pm2_5", "pm10", "ozone"]:
+            serie = hourly.get(param, [])
+            if i < len(serie) and serie[i] is not None:
+                results.append({
+                    "lat": lat,
+                    "lon": lon,
+                    "parameter": param,
+                    "value": serie[i],
+                    "unit": "µg/m³",
+                    "datetime": t,
+                })
+    return {"source": "open-meteo/air-quality", "results": results[:limit]}
+
+# --- endpoint normalized (reemplaza el tuyo) ---
+@router.get("/normalized")
+def normalized(
+    lat: float = Query(-31.4201, description="Latitude"),
+    lon: float = Query(-64.1888, description="Longitude"),
+    radius: int = Query(50_000, description="Radius meters (OpenAQ)"),
+    limit: int = Query(10, description="Limit"),
+    city: str | None = Query(None, description="City (optional)"),
+):
+    """
+    Devuelve mediciones normalizadas:
+    [{lat, lon, parameter, value, unit, datetime}]
+    Intenta OpenAQ (/measurements) por coords o city; si 0 resultados, fallback a Open‑Meteo.
+    """
+    # 1) OpenAQ /measurements (ordena por datetime desc)
+    try:
+        mq = {"limit": limit, "order_by": "datetime", "sort": "desc"}
+        if city:
+            mq["city"] = city
+        else:
+            mq.update({"coordinates": f"{lat},{lon}", "radius": radius})
+
+        mdata = _get(f"{OAQ}/measurements", mq)
+        oa_results = _normalize_openaq_measurements(mdata.get("results", []))
+    except requests.RequestException:
+        oa_results = []
+
+    # 2) Si OpenAQ trajo algo, devolver
+    if oa_results:
+        return {"source": "openaq/measurements", "results": oa_results[:limit]}
+
+    # 3) Fallback a Open‑Meteo si no hay resultados
+    return _fetch_openmeteo(lat, lon, limit)

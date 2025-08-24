@@ -2,12 +2,32 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <link rel="icon" type="image/png" href="/pin.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Vite + React</title>
+
+    <!-- CSP: dentro de <head>. Ajusta host/puertos si hace falta -->
+    <meta http-equiv="Content-Security-Policy" content="
+  default-src 'self';
+  script-src 'self' 'unsafe-eval' blob:;
+  worker-src 'self' blob:;
+  style-src 'self' 'unsafe-inline';
+  img-src * data: blob:;
+  connect-src
+    http://localhost:8000 http://127.0.0.1:8000
+    https://tile.openstreetmap.org https://basemaps.cartocdn.com https://demotiles.maplibre.org
+    ws://localhost:5175 wss://localhost:5175;
+  font-src 'self' data:;
+">
+
+
+
+
+
+    <title>ArgentinaSpace</title>
   </head>
   <body>
     <div id="root"></div>
+    <!-- Vite inyecta este módulo; debe ir DESPUÉS de la CSP -->
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>
