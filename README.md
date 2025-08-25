@@ -1,80 +1,59 @@
-## 🐳 Ejecutar con Docker
-Dev (hot-reload) – Frontend + Backend
-# desde la raíz del repo
-docker compose -f docker-compose.dev.yml up --build
+## 🚀 Proyecto: ArgentinaSpace — Air Quality (MVP)
 
+Aplicación web que visualiza la **calidad del aire** en Córdoba (Argentina) usando
+datos abiertos de OpenAQ / Open-Meteo y un backend propio en **FastAPI**.  
+El frontend usa **React + Vite + MapLibre** para renderizar un mapa interactivo
+con puntos de contaminación (PM₂․₅, O₃, NO₂, etc.) y leyendas dinámicas.
 
-Frontend (Vite): http://localhost:5173
+---
 
-Backend (Swagger): http://localhost:8000/docs
+## 📅 Sprint 1 — Alcance entregado
 
-Parar: Ctrl + C
+- **Infraestructura**: Docker Compose (dev y prod), CORS configurado, `.env` para Vite.
+- **Backend (FastAPI)**:
+  - Endpoints `/openaq/normalized` y `/openaq/latest`.
+  - Swagger habilitado en `http://localhost:8000/docs`.
+  - Adaptador para datos de OpenAQ / Open-Meteo.
+- **Frontend (React + Vite)**:
+  - Configuración inicial con Chakra + MUI.
+  - Componente `<MapView>` con MapLibre y capas de puntos.
+  - Interacción básica: popup con contaminante y valor.
+  - Componente `<Legend>` con rangos de colores.
+  - Selector de contaminante en `<Header>`.
+- **Funcionalidad clave**:
+  - Visualización dinámica de calidad del aire por contaminante.
+  - Cache de resultados para reducir latencia.
+- **Documentación**:
+  - README con pasos de ejecución en dev/prod/local.
+  - Notas de configuración de CORS y `.env`.
 
-Limpiar: docker compose -f docker-compose.dev.yml down
+---
 
-Notas dev
+## 📅 Sprint 2 — Alcance entregado
 
-El frontend usa VITE_API_URL=http://api:8000 (nombre del servicio en la red Docker).
+- **Interacción avanzada en mapa**:
+  - Nuevo modo de selección: al hacer click en cualquier punto del mapa, se consulta
+    la contaminación exacta en esas coordenadas.
+  - Se reemplazó el marcador estático por un único círculo dinámico que se mueve con cada click.
+- **Mejoras en los datos**:
+  - Filtro correcto por contaminante (ej. O₃ ya devuelve ozono en vez de PM₂․₅).
+  - Colores del punto clickeado adaptados al rango definido en `constants/aqi.js`.
+  - Cache puntual (`fetchAtPoint`) para mejorar respuesta de consultas.
+- **UI/UX**:
+  - Popup enriquecido con valores, unidad, fecha y coordenadas.
+  - Eliminado el punto “tieso” que se movía con el viewport (quedaba duplicado).
+- **Refactor técnico**:
+  - Manejo de listeners para evitar duplicados en HMR (desarrollo).
+  - Ajustes en `MapView.jsx` y `api.js` para unificar la lógica de consultas.
+  - Manejo seguro de carga de estilos (`map.once("idle", ...)`).
+- **Documentación**:
+  - Actualización del README con alcance del Sprint 2.
 
-CORS en backend debe permitir http://localhost:5173.
+---
 
-Prod (build + Nginx para el front)
-# desde la raíz del repo
-docker compose up --build -d
+## 📅 Sprint 3 — Próximos pasos (plan)
 
-
-Web (frontend build): http://localhost:8080
-
-API: http://localhost:8000/docs
-
-Logs: docker compose logs -f
-
-Apagar: docker compose down
-
-Notas prod
-
-El build del front se hace con VITE_API_URL=http://api:8000 (definido en docker-compose.yml).
-
-Si el puerto 8080 está ocupado, cambiá a 8081:80.
-
-## 🧪 Ejecutar sin Docker (opcional)
-Backend (FastAPI)
-cd backend
-python -m venv venv
-venv\Scripts\activate
-pip install -r requirements.txt
-python -m uvicorn app.main:app --reload --port 8000
-# Swagger → http://localhost:8000/docs
-
-Frontend (Vite)
-cd frontend
-npm install
-# opcional: crear .env con:
-# VITE_API_URL=http://localhost:8000
-npm run dev -- --host
-# http://localhost:5173
-
-## ⚙️ Variables y archivos útiles
-
-frontend/.env (local opcional)
-
-VITE_API_URL=http://localhost:8000
-
-
-backend CORS (main.py)
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["http://localhost:5173","http://localhost:8080"],
-    allow_credentials=True, allow_methods=["*"], allow_headers=["*"],
-)
-
-## 🧰 Problemas comunes
-
-“docker: command not found” → instalar/abrir Docker Desktop y WSL2.
-
-Puerto en uso → cambia puertos en docker-compose*.yml (ej. 8001:8000, 8081:80).
-
-El front pega a la API equivocada → revisá VITE_API_URL (dev: http://api:8000; local fuera de Docker: http://localhost:8000).
-
-Swagger muestra valores viejos → refresco duro del navegador (Ctrl+F5) y reiniciar backend.
+- Dashboard con gráficas históricas por contaminante.
+- Test unitarios básicos en backend y frontend.
+- Deploy en servicio cloud (ej: Render, Railway o AWS).
+- Refinar UI: diseño responsive y mejoras en la experiencia de usuario.
