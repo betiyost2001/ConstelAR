@@ -1,4 +1,4 @@
-## 🚀 Proyecto: ContelAR — Air Quality (MVP)
+## 🚀 Proyecto: ConstelAR — Air Quality (MVP)
 
 Aplicación web que visualiza la **calidad del aire** en Córdoba (Argentina) usando
 datos abiertos de OpenAQ / Open-Meteo y un backend propio en **FastAPI**.  
