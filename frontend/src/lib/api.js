@@ -54,20 +54,21 @@ export async function fetchMeasurements({ bbox, pollutant, signal }) {
   const data = await res.json();
 
   // Normalizamos a GeoJSON con el nombre UI
-  const fc = {
-    type: "FeatureCollection",
-    features: (data.results || []).map(r => ({
-      type: "Feature",
-      geometry: { type: "Point", coordinates: [r.lon, r.lat] },
-      properties: {
-  parameter: m.parameter || pollutant,
-  value: Number(m.value),        // << clave: aseguramos número
-  unit: m.unit,
-  datetime: m.datetime,
-},
+  // Normalizamos a GeoJSON con nombres UI y value como número
+const fc = {
+  type: "FeatureCollection",
+  features: (data.results || []).map((r) => ({
+    type: "Feature",
+    geometry: { type: "Point", coordinates: [r.lon, r.lat] }, // o [r.longitude, r.latitude] según tu API
+    properties: {
+      parameter: toUiParam(r.parameter), // <-- nombre UI (pm25, no2, etc.)
+      value: Number(r.value),            // <-- número (clave para colorExpression)
+      unit: r.unit,
+      datetime: r.datetime,
+    },
+  })),
+};
 
-    }))
-  };
 
   setCache(key, fc);
   return fc;
