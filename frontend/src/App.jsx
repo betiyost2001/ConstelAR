@@ -1,5 +1,6 @@
 // src/App.jsx
 import { useState } from "react";
+import FilterBar from "./components/FilterBar.jsx";
 import Header from "./components/Header";
 import MapView from "./components/MapView";
 import Legend from "./components/Legend";
@@ -28,7 +29,8 @@ export default function App() {
 
       {/* contenedor posicionado para superponer la leyenda sobre el mapa */}
       <div style={{ position: "relative" }}>
-        <MapView pollutant={pollutant} />
+        <FilterBar pollutant={pollutant} onChange={setPollutant} />
+      <MapView pollutant={pollutant} />
         <Legend pollutant={pollutant} title={`${pollutant.toUpperCase()} (µg/m³)`} />
       </div>
     </div>

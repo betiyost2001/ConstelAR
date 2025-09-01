@@ -1,29 +1,33 @@
 // src/main.jsx
-import React from 'react'
-import ReactDOM from 'react-dom/client'
-import App from './App.jsx'
+import React from "react";
+import ReactDOM from "react-dom/client";
+import App from "./App.jsx";
 
 // MUI
-import { ThemeProvider as MUIThemeProvider, createTheme, StyledEngineProvider } from '@mui/material/styles'
-import CssBaseline from '@mui/material/CssBaseline'
+import { StyledEngineProvider } from "@mui/material/styles";
+import { ThemeProvider as MUIThemeProvider } from "@mui/material/styles";
+import CssBaseline from "@mui/material/CssBaseline";
+import muiTheme from "./theme/muiTheme";        // <= usa TU tema (JS)
+                                               // si lo tenés .ts, convertí a .js o configura TS
 
 // Chakra
-import { ChakraProvider, extendTheme } from '@chakra-ui/react'
+import { ChakraProvider } from "@chakra-ui/react";
+import chakraTheme from "./theme/chakraTheme";  // <= usa TU tema (JS)
 
-const muiTheme = createTheme()
-const chakraTheme = extendTheme({})
+// Global CSS (gradiente, glow, etc. si lo usás)
+import "./app.css";
 
-ReactDOM.createRoot(document.getElementById('root')).render(
+ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
-    {/* Chakra afuera para que no pise el theme de MUI */}
-    <ChakraProvider theme={chakraTheme}>
-      {/* injectFirst: que los estilos de MUI se inyecten primero y no haya conflictos */}
-      <StyledEngineProvider injectFirst>
-        <MUIThemeProvider theme={muiTheme}>
-          <CssBaseline />
+    {/* MUI afuera + injectFirst para que su CSS se inyecte primero */}
+    <StyledEngineProvider injectFirst>
+      <MUIThemeProvider theme={muiTheme}>
+        <CssBaseline />
+        {/* Chakra adentro: no pisa el theme de MUI */}
+        <ChakraProvider theme={chakraTheme}>
           <App />
-        </MUIThemeProvider>
-      </StyledEngineProvider>
-    </ChakraProvider>
+        </ChakraProvider>
+      </MUIThemeProvider>
+    </StyledEngineProvider>
   </React.StrictMode>
-)
+);

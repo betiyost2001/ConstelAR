@@ -60,11 +60,12 @@ export async function fetchMeasurements({ bbox, pollutant, signal }) {
       type: "Feature",
       geometry: { type: "Point", coordinates: [r.lon, r.lat] },
       properties: {
-        parameter: toUiParam(r.parameter),   // <-- UI key (pm25, o3, no2…)
-        value: r.value,
-        unit: r.unit,
-        datetime: r.datetime
-      }
+  parameter: m.parameter || pollutant,
+  value: Number(m.value),        // << clave: aseguramos número
+  unit: m.unit,
+  datetime: m.datetime,
+},
+
     }))
   };
 

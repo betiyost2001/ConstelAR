@@ -1,5 +1,23 @@
-html, body, #root { height: 100%; margin: 0; }
+/* src/app.css */
 .map-container {
-  height: calc(100vh - 72px); /* o 100vh si no tenés header */
+  position: relative;
   width: 100%;
+  height: calc(100vh - 64px); /* ajustá si tu Header es más alto/bajo */
+  z-index: 0; /* popups/controles quedan arriba */
+}
+
+.spaceapps-bg {
+  background: linear-gradient(45deg, #0042A6 0%, #07173F 100%);
+}
+
+/* Popups y controles legibles sobre el fondo oscuro */
+.maplibregl-popup-content {
+  background: rgba(7,23,63,.92);
+  color: #fff;
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 12px;
+}
+.maplibregl-ctrl {
+  box-shadow: none;
+  border-radius: 10px;
 }

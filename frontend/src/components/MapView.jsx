@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef } from "react";
+import { useLayoutEffect, useRef, useEffect } from "react";
 import maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { fetchMeasurements, bboxFromMap, fetchAtPoint } from "../lib/api";
@@ -9,19 +9,35 @@ function debounce(fn, ms) {
   return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), ms); };
 }
 
-export default function MapView({ pollutant = "pm25", fetcher = fetchMeasurements }) {
+/**
+ * Props:
+ * - pollutant?: "pm25" | "pm10" | "no2" | ...
+ * - fetcher?: ({bbox, pollutant, signal}) => GeoJSON
+ * - center?: [lng, lat]
+ * - zoom?: number
+ */
+export default function MapView({
+  pollutant = "pm25",
+  fetcher = fetchMeasurements,
+  center = [-64.1888, -31.4201],
+  zoom = 12,
+}) {
   const mapRef = useRef(null);
   const divRef = useRef(null);
   const abortRef = useRef(null);
   const clickHandlerRef = useRef(null);
+  const resizeObsRef = useRef(null);
 
   useLayoutEffect(() => {
     let raf;
 
     const init = () => {
-      if (!divRef.current) { raf = requestAnimationFrame(init); return; }
-      if (mapRef.current) return;
+      const el = divRef.current;
+      if (!el) { raf = requestAnimationFrame(init); return; }
+      if (mapRef.current || el.__maplibre_initialized) return; // evita HMR-dup
+      el.__maplibre_initialized = true;
 
+      // estilo base raster
       const rasterStyle = {
         version: 8,
         sources: {
@@ -36,14 +52,17 @@ export default function MapView({ pollutant = "pm25", fetcher = fetchMeasurement
       };
 
       const map = new maplibregl.Map({
-        container: divRef.current,
+        container: el,
         style: rasterStyle,
-        center: [-64.1888, -31.4201],
-        zoom: 12,
+        center,
+        zoom,
         attributionControl: false,
+        pixelRatio: Math.max(1, Math.min(window.devicePixelRatio || 1, 2)), // nitidez
+        failIfMajorPerformanceCaveat: false,
       });
       mapRef.current = map;
 
+      // Controles
       map.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), "top-right");
       map.addControl(new maplibregl.AttributionControl({ compact: true }), "bottom-right");
 
@@ -73,27 +92,24 @@ export default function MapView({ pollutant = "pm25", fetcher = fetchMeasurement
                 "circle-opacity": 0.85,
               },
             });
-            // 🔕 Ocultamos el layer de fondo para que no se vea el punto "naranja"
+            // Mantener oculto (evita el “punto naranja” inicial)
             map.setLayoutProperty(LAYER_ID, "visibility", "none");
           } else {
             map.getSource(SOURCE_ID).setData(geojson);
             map.setPaintProperty(LAYER_ID, "circle-color", colorExpression("value", pollutant));
-            // mantenerlo oculto siempre
             map.setLayoutProperty(LAYER_ID, "visibility", "none");
           }
         } catch (e) {
-          if (e.name !== "AbortError") console.error("AQ load error:", e);
+          if (e?.name !== "AbortError") console.error("AQ load error:", e);
         }
       }
 
-      // Capa de selección (única interacción de click)
       function ensureSelectionLayer() {
         if (!map.getSource(SEL_SOURCE)) {
           map.addSource(SEL_SOURCE, {
             type: "geojson",
             data: { type: "FeatureCollection", features: [] },
           });
-
           map.addLayer({
             id: SEL_LAYER,
             type: "circle",
@@ -108,20 +124,16 @@ export default function MapView({ pollutant = "pm25", fetcher = fetchMeasurement
           });
         }
 
-        // Evitar listeners duplicados en HMR
+        // limpiar oyente previo (HMR)
         if (clickHandlerRef.current) map.off("click", clickHandlerRef.current);
 
         const onClick = async (ev) => {
           const { lng, lat } = ev.lngLat;
 
-          // Pintamos inmediatamente el círculo gris
+          // feedback inmediato (gris)
           map.getSource(SEL_SOURCE).setData({
             type: "FeatureCollection",
-            features: [{
-              type: "Feature",
-              geometry: { type: "Point", coordinates: [lng, lat] },
-              properties: {},
-            }],
+            features: [{ type: "Feature", geometry: { type: "Point", coordinates: [lng, lat] }, properties: {} }],
           });
 
           try {
@@ -141,15 +153,16 @@ export default function MapView({ pollutant = "pm25", fetcher = fetchMeasurement
                 }],
               });
 
-              new maplibregl.Popup({ closeButton: true })
+              const html = `
+                <div style="font-family: 'Overpass', system-ui; padding:6px 4px; color:#fff;">
+                  <div><b>${m.parameter || pollutant}</b>: ${Number(m.value).toFixed(1)} ${m.unit || ""}</div>
+                  <div style="color:#B8C0DD; font-size:12px">${m.datetime ?? ""}</div>
+                  <div style="color:#9AA3C0; font-size:11px">(${lat.toFixed(5)}, ${lng.toFixed(5)})</div>
+                </div>
+              `;
+              new maplibregl.Popup({ closeButton: true, maxWidth: "260px" })
                 .setLngLat([lng, lat])
-                .setHTML(`
-                  <div style="font-family: system-ui; padding:4px 2px">
-                    <div><b>${m.parameter || pollutant}</b>: ${Number(m.value).toFixed(1)} ${m.unit || ""}</div>
-                    <div style="color:#666; font-size:12px">${m.datetime ?? ""}</div>
-                    <div style="color:#777; font-size:11px">(${lat.toFixed(5)}, ${lng.toFixed(5)})</div>
-                  </div>
-                `)
+                .setHTML(html)
                 .addTo(map);
             }
           } catch (err) {
@@ -159,15 +172,19 @@ export default function MapView({ pollutant = "pm25", fetcher = fetchMeasurement
 
         clickHandlerRef.current = onClick;
         map.on("click", onClick);
+
+        // UX: puntero en el mapa
+        map.getCanvas().style.cursor = "crosshair";
       }
 
       const debounced = debounce(loadForCurrentView, 400);
-
       const boot = () => { ensureSelectionLayer(); loadForCurrentView(); };
-      if (map.isStyleLoaded()) boot();
-      else map.once("idle", boot);
-
+      if (map.isStyleLoaded()) boot(); else map.once("idle", boot);
       map.on("moveend", debounced);
+
+      // Auto-resize cuando cambia el tamaño del contenedor padre
+      resizeObsRef.current = new ResizeObserver(() => map.resize());
+      resizeObsRef.current.observe(el);
     };
 
     init();
@@ -176,10 +193,12 @@ export default function MapView({ pollutant = "pm25", fetcher = fetchMeasurement
       abortRef.current?.abort();
       const map = mapRef.current;
       if (map && clickHandlerRef.current) map.off("click", clickHandlerRef.current);
+      try { resizeObsRef.current?.disconnect(); } catch {}
       mapRef.current?.remove();
       mapRef.current = null;
+      if (divRef.current) delete divRef.current.__maplibre_initialized;
     };
-  }, [pollutant, fetcher]);
+  }, [pollutant, fetcher, center, zoom]);
 
   // Si cambia el contaminante, refrescamos color del punto seleccionado
   useLayoutEffect(() => {
@@ -194,5 +213,12 @@ export default function MapView({ pollutant = "pm25", fetcher = fetchMeasurement
     }
   }, [pollutant]);
 
-  return <div ref={divRef} className="map-container" />;
+  return (
+    <div
+      ref={divRef}
+      className="map-container spaceapps-bg"
+      aria-label="Vista de mapa con mediciones de calidad del aire"
+      role="region"
+    />
+  );
 }
