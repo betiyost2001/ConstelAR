@@ -1,59 +1,109 @@
-## 🚀 Proyecto: ArgentinaSpace — Air Quality (MVP)
+## 🌌 ContelAR — NASA Space Apps Challenge 2025  
 
-Aplicación web que visualiza la **calidad del aire** en Córdoba (Argentina) usando
-datos abiertos de OpenAQ / Open-Meteo y un backend propio en **FastAPI**.  
-El frontend usa **React + Vite + MapLibre** para renderizar un mapa interactivo
-con puntos de contaminación (PM₂․₅, O₃, NO₂, etc.) y leyendas dinámicas.
+**ContelAR** es una aplicación web que integra datos satelitales de la misión **TEMPO (Tropospheric Emissions: Monitoring Pollution)** junto con mediciones terrestres y variables meteorológicas, para mostrar en tiempo casi real la **calidad del aire en Norteamérica**.  
 
----
-
-## 📅 Sprint 1 — Alcance entregado
-
-- **Infraestructura**: Docker Compose (dev y prod), CORS configurado, `.env` para Vite.
-- **Backend (FastAPI)**:
-  - Endpoints `/openaq/normalized` y `/openaq/latest`.
-  - Swagger habilitado en `http://localhost:8000/docs`.
-  - Adaptador para datos de OpenAQ / Open-Meteo.
-- **Frontend (React + Vite)**:
-  - Configuración inicial con Chakra + MUI.
-  - Componente `<MapView>` con MapLibre y capas de puntos.
-  - Interacción básica: popup con contaminante y valor.
-  - Componente `<Legend>` con rangos de colores.
-  - Selector de contaminante en `<Header>`.
-- **Funcionalidad clave**:
-  - Visualización dinámica de calidad del aire por contaminante.
-  - Cache de resultados para reducir latencia.
-- **Documentación**:
-  - README con pasos de ejecución en dev/prod/local.
-  - Notas de configuración de CORS y `.env`.
+El proyecto busca ofrecer **pronósticos accesibles** y **alertas tempranas** de contaminación, contribuyendo a la **prevención en salud pública** y a la **concientización ciudadana**.  
 
 ---
 
-## 📅 Sprint 2 — Alcance entregado
+## 📍 About the project (English version)  
 
-- **Interacción avanzada en mapa**:
-  - Nuevo modo de selección: al hacer click en cualquier punto del mapa, se consulta
-    la contaminación exacta en esas coordenadas.
-  - Se reemplazó el marcador estático por un único círculo dinámico que se mueve con cada click.
-- **Mejoras en los datos**:
-  - Filtro correcto por contaminante (ej. O₃ ya devuelve ozono en vez de PM₂․₅).
-  - Colores del punto clickeado adaptados al rango definido en `constants/aqi.js`.
-  - Cache puntual (`fetchAtPoint`) para mejorar respuesta de consultas.
-- **UI/UX**:
-  - Popup enriquecido con valores, unidad, fecha y coordenadas.
-  - Eliminado el punto “tieso” que se movía con el viewport (quedaba duplicado).
-- **Refactor técnico**:
-  - Manejo de listeners para evitar duplicados en HMR (desarrollo).
-  - Ajustes en `MapView.jsx` y `api.js` para unificar la lógica de consultas.
-  - Manejo seguro de carga de estilos (`map.once("idle", ...)`).
-- **Documentación**:
-  - Actualización del README con alcance del Sprint 2.
+**ContelAR** is a web application that integrates satellite data from the **TEMPO mission (Tropospheric Emissions: Monitoring Pollution)** together with ground-based measurements and meteorological variables, to display near real-time **air quality information across North America**.  
+
+The project aims to deliver **accessible forecasts** and **early alerts** about air pollution, supporting **public health prevention** and **citizen awareness**.  
 
 ---
 
-## 📅 Sprint 3 — Próximos pasos (plan)
+## 📅 Avances entregados – Etapa 1 / Delivered progress – Stage 1  
 
-- Dashboard con gráficas históricas por contaminante.
-- Test unitarios básicos en backend y frontend.
-- Deploy en servicio cloud (ej: Render, Railway o AWS).
-- Refinar UI: diseño responsive y mejoras en la experiencia de usuario.
+- **Infraestructura / Infrastructure**  
+  - Docker Compose (dev & prod).  
+  - Backend CORS configuration.  
+  - `.env` variables for Vite.  
+
+- **Backend (FastAPI)**  
+  - Endpoints `/openaq/normalized` and `/openaq/latest`.  
+  - Swagger enabled at `http://localhost:8000/docs`.  
+  - Adapter for OpenAQ / Open-Meteo data.  
+
+- **Frontend (React + Vite)**  
+  - Initial setup with Chakra UI + MUI.  
+  - `<MapView>` component with MapLibre and point layers.  
+  - Basic popup with pollutant and value.  
+  - `<Legend>` component with color ranges.  
+  - Pollutant selector in `<Header>`.  
+
+- **Funcionalidad clave / Key features**  
+  - Dynamic visualization of air quality by pollutant.  
+  - Cached results to reduce latency.  
+
+- **Documentación / Documentation**  
+  - Initial README with execution steps.  
+  - Notes on CORS and `.env` setup.  
+
+---
+
+## 📅 Avances entregados – Etapa 2 / Delivered progress – Stage 2  
+
+- **Interacción en el mapa / Map interaction**  
+  - New selection mode: click anywhere on the map to query pollution at that point.  
+  - Dynamic circle replaces static marker.  
+
+- **Mejoras en datos / Data improvements**  
+  - Correct pollutant filtering (e.g., O₃ shown as ozone).  
+  - Colors adapted to ranges in `constants/aqi.js`.  
+  - Cached point queries (`fetchAtPoint`) for faster responses.  
+
+- **UI/UX**  
+  - Popup enriched with value, unit, date, and coordinates.  
+  - Removed “stiff” marker that duplicated on viewport move.  
+
+- **Refactor técnico / Technical refactor**  
+  - Better listener handling to avoid duplicates in HMR.  
+  - Adjustments in `MapView.jsx` and `api.js`.  
+  - Safe style loading (`map.once("idle", ...)`).  
+
+- **Documentación / Documentation**  
+  - README updated with Stage 2 progress.  
+
+---
+
+## 📅 Próximos pasos / Next steps  
+
+- Dashboard with historical pollutant charts.  
+- Basic unit tests in backend and frontend.  
+- Deployment to a cloud service (Render, Railway, or AWS).  
+- Refine UI: responsive design and user experience improvements.  
+
+---
+
+## 👩‍🚀 Equipo / Team  
+
+We are **ContelAR**, a diverse team of students and professionals passionate about science and technology:  
+
+- **Betina Yost** – Ingeniería en Sistemas (Córdoba) | Frontend, coordination, documentation.  
+- **Agustina Fiorella Silva** – Ingeniería en Sistemas (Córdoba) | Backend, APIs.  
+- **Kevin Agustín Ruiz** – Ingeniería en Sistemas (Buenos Aires) | Frontend & Backend.  
+- **Ludmila Gandur** – Physics student | Research and documentation.  
+- **Trinidad Bernardez** – Secondary school student (future astrophysicist) | Research and communication.  
+- **Eduardo Alejandro Ponce Cobos** – Systems Engineer, Backend developer (10+ years experience).  
+
+This combination of **academic diversity**, **professional expertise**, and **motivation to learn** allows us to approach the challenge from multiple perspectives, balancing technical rigor with creativity and innovation.  
+
+---
+
+## 🛠️ Tecnologías y herramientas / Tech & Tools  
+
+**Frontend**: React + Vite, Chakra UI/MUI, MapLibre GL, PWA  
+**Backend**: FastAPI, xarray/dask, SQLite, Tippecanoe  
+**Data**: NASA TEMPO (EarthData, Harmony, CMR), AirNow, OpenAQ, HRRR/GFS  
+**Infraestructura / Infra**: Docker, Google Cloud Run / AWS ECS, GitHub Actions  
+**Colaboración / Collaboration**: GitHub, Trello, Google Drive, Figma  
+
+---
+
+## 📄 Licencia / License  
+
+This project is developed as part of the **NASA Space Apps Challenge 2025**.  
+Educational and non-commercial use only.  
+
