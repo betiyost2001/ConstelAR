@@ -59,4 +59,4 @@ const chakraTheme = extendTheme({
   },
 });
 
-export default chakraTheme; // ← clave
+export default chakraTheme; 
