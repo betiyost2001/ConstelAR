@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef, useEffect } from "react";
+import { useLayoutEffect, useRef } from "react";
 import maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { fetchMeasurements, bboxFromMap, fetchAtPoint } from "../lib/api";
@@ -34,10 +34,9 @@ export default function MapView({
     const init = () => {
       const el = divRef.current;
       if (!el) { raf = requestAnimationFrame(init); return; }
-      if (mapRef.current || el.__maplibre_initialized) return; // evita HMR-dup
+      if (mapRef.current || el.__maplibre_initialized) return;
       el.__maplibre_initialized = true;
 
-      // estilo base raster
       const rasterStyle = {
         version: 8,
         sources: {
@@ -57,12 +56,11 @@ export default function MapView({
         center,
         zoom,
         attributionControl: false,
-        pixelRatio: Math.max(1, Math.min(window.devicePixelRatio || 1, 2)), // nitidez
+        pixelRatio: Math.max(1, Math.min(window.devicePixelRatio || 1, 2)),
         failIfMajorPerformanceCaveat: false,
       });
       mapRef.current = map;
 
-      // Controles
       map.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), "top-right");
       map.addControl(new maplibregl.AttributionControl({ compact: true }), "bottom-right");
 
@@ -92,7 +90,6 @@ export default function MapView({
                 "circle-opacity": 0.85,
               },
             });
-            // Mantener oculto (evita el “punto naranja” inicial)
             map.setLayoutProperty(LAYER_ID, "visibility", "none");
           } else {
             map.getSource(SOURCE_ID).setData(geojson);
@@ -124,13 +121,11 @@ export default function MapView({
           });
         }
 
-        // limpiar oyente previo (HMR)
         if (clickHandlerRef.current) map.off("click", clickHandlerRef.current);
 
         const onClick = async (ev) => {
           const { lng, lat } = ev.lngLat;
 
-          // feedback inmediato (gris)
           map.getSource(SEL_SOURCE).setData({
             type: "FeatureCollection",
             features: [{ type: "Feature", geometry: { type: "Point", coordinates: [lng, lat] }, properties: {} }],
@@ -139,6 +134,7 @@ export default function MapView({
           try {
             const m = await fetchAtPoint({ lat, lon: lng, pollutant });
             if (m) {
+              const val = Number.parseFloat(String(m.value).replace(",", "."));
               map.getSource(SEL_SOURCE).setData({
                 type: "FeatureCollection",
                 features: [{
@@ -146,7 +142,7 @@ export default function MapView({
                   geometry: { type: "Point", coordinates: [lng, lat] },
                   properties: {
                     parameter: m.parameter || pollutant,
-                    value: m.value,
+                    value: isNaN(val) ? null : val,
                     unit: m.unit,
                     datetime: m.datetime,
                   },
@@ -155,7 +151,7 @@ export default function MapView({
 
               const html = `
                 <div style="font-family: 'Overpass', system-ui; padding:6px 4px; color:#fff;">
-                  <div><b>${m.parameter || pollutant}</b>: ${Number(m.value).toFixed(1)} ${m.unit || ""}</div>
+                  <div><b>${m.parameter || pollutant}</b>: ${isNaN(val) ? "-" : val.toFixed(1)} ${m.unit || ""}</div>
                   <div style="color:#B8C0DD; font-size:12px">${m.datetime ?? ""}</div>
                   <div style="color:#9AA3C0; font-size:11px">(${lat.toFixed(5)}, ${lng.toFixed(5)})</div>
                 </div>
@@ -172,8 +168,6 @@ export default function MapView({
 
         clickHandlerRef.current = onClick;
         map.on("click", onClick);
-
-        // UX: puntero en el mapa
         map.getCanvas().style.cursor = "crosshair";
       }
 
@@ -182,7 +176,6 @@ export default function MapView({
       if (map.isStyleLoaded()) boot(); else map.once("idle", boot);
       map.on("moveend", debounced);
 
-      // Auto-resize cuando cambia el tamaño del contenedor padre
       resizeObsRef.current = new ResizeObserver(() => map.resize());
       resizeObsRef.current.observe(el);
     };
@@ -200,7 +193,7 @@ export default function MapView({
     };
   }, [pollutant, fetcher, center, zoom]);
 
-  // Si cambia el contaminante, refrescamos color del punto seleccionado
+  // Si cambia el contaminante, refrescar color del punto seleccionado
   useLayoutEffect(() => {
     const map = mapRef.current;
     if (!map) return;

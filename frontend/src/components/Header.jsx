@@ -1,5 +1,6 @@
 import {
-  Box, Flex, HStack, IconButton, Button, Link, Stack, useDisclosure, Text
+  Box, Flex, HStack, IconButton, Link, Stack, useDisclosure, Text, Button,
+  Modal, ModalOverlay, ModalContent, ModalHeader, ModalBody, ModalCloseButton
 } from "@chakra-ui/react";
 import { CloseIcon, HamburgerIcon } from "@chakra-ui/icons";
 
@@ -9,19 +10,42 @@ const NAV = [
   { href: "#docs", label: "Docs" },
 ];
 
+function ContaminantsInfoModalBtn() {
+  const { isOpen, onOpen, onClose } = useDisclosure();
+  return (
+    <>
+      <Button size="sm" variant="outline" onClick={onOpen}>
+        ¿Qué mide cada contaminante?
+      </Button>
+      <Modal isOpen={isOpen} onClose={onClose} size="lg" isCentered>
+        <ModalOverlay />
+        <ModalContent>
+          <ModalHeader>Contaminantes y por qué importan</ModalHeader>
+          <ModalCloseButton />
+          <ModalBody>
+            <Stack spacing={3} fontSize="sm">
+              <Text><b>PM2.5</b>: partículas finas que penetran profundamente en los pulmones.</Text>
+              <Text><b>PM10</b>: partículas respirables (polvo, polen).</Text>
+              <Text><b>NO₂</b>: tráfico/combustión; irritación respiratoria.</Text>
+              <Text><b>O₃</b>: ozono troposférico; se forma con sol y precursores.</Text>
+              <Text><b>SO₂</b>: combustibles con azufre; afecta vías respiratorias.</Text>
+              <Text><b>CO</b>: monóxido de carbono; reduce transporte de oxígeno en sangre.</Text>
+              <Link href="#metodo" color="space.neonYel">Leer metodología</Link>
+            </Stack>
+          </ModalBody>
+        </ModalContent>
+      </Modal>
+    </>
+  );
+}
+
 export default function Header() {
   const { isOpen, onOpen, onClose } = useDisclosure();
-
   return (
     <Box as="header" position="sticky" top="0" zIndex="docked" bg="transparent" backdropFilter="blur(6px)">
-      <Flex
-        className="spaceapps-bg"
-        px={{ base: 4, md: 8 }}
-        py={3}
-        align="center"
-        borderBottom="1px solid"
-        borderColor="rgba(255,255,255,.08)"
-      >
+      <Flex className="spaceapps-bg"
+        px={{ base: 4, md: 8 }} py={3} align="center"
+        borderBottom="1px solid" borderColor="rgba(255,255,255,.08)">
         {/* Brand */}
         <Text as="a" href="/" fontFamily="'Fira Sans', system-ui, sans-serif" fontWeight="900" fontSize="xl">
           ConstelAR
@@ -36,12 +60,7 @@ export default function Header() {
         </HStack>
 
         <Flex ml="auto" align="center" gap={3}>
-          <Button className="glow-hover" size="sm" variant="outline">
-            Documentación
-          </Button>
-          <Button className="glow-hover" size="sm">
-            Iniciar sesión
-          </Button>
+          <ContaminantsInfoModalBtn />
           <IconButton
             aria-label="Abrir menú"
             display={{ base: "inline-flex", md: "none" }}
@@ -61,9 +80,6 @@ export default function Header() {
                 {item.label}
               </Link>
             ))}
-            <Button className="glow-hover" size="sm" w="full" mt={2}>
-              Iniciar sesión
-            </Button>
           </Stack>
         </Box>
       )}
