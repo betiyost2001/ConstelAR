@@ -1,16 +1,15 @@
-/* src/app.css */
 .map-container {
   position: relative;
   width: 100%;
-  height: calc(100vh - 64px); /* ajustá si tu Header es más alto/bajo */
-  z-index: 0; /* popups/controles quedan arriba */
+  height: calc(100vh - 64px); /* ajustá según alto del header */
+  z-index: 0;
 }
 
 .spaceapps-bg {
   background: linear-gradient(45deg, #0042A6 0%, #07173F 100%);
 }
 
-/* Popups y controles legibles sobre el fondo oscuro */
+/* Popups y controles legibles */
 .maplibregl-popup-content {
   background: rgba(7,23,63,.92);
   color: #fff;

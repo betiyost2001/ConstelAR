@@ -1,40 +1,36 @@
-// src/constants/aqi.js
-
-// Conjuntos de cortes por contaminante (puedes ajustar colores/umbrales)
-export const BREAKSETS = {
-  pm25: [
-    { max: 12,  color: '#2ecc71', label: '0–12 (Bueno)' },
-    { max: 35,  color: '#f1c40f', label: '12–35 (Moderado)' },
-    { max: 55,  color: '#e67e22', label: '35–55 (Alto)' },
-    { max: 500, color: '#e74c3c', label: '55+ (Muy alto)' },
-  ],
-  pm10: [
-    { max: 54,  color: '#2ecc71', label: '0–54 (Bueno)' },
-    { max: 154, color: '#f1c40f', label: '55–154 (Moderado)' },
-    { max: 254, color: '#e67e22', label: '155–254 (Alto)' },
-    { max: 1000,color: '#e74c3c', label: '255+ (Muy alto)' },
-  ],
-  o3: [
-    { max: 60,  color: '#2ecc71', label: '0–60 (Bueno)' },
-    { max: 120, color: '#f1c40f', label: '60–120 (Moderado)' },
-    { max: 180, color: '#e67e22', label: '120–180 (Alto)' },
-    { max: 1000,color: '#e74c3c', label: '180+ (Muy alto)' },
-  ],
-  // agrega más (no2, o3, etc.) si los usas
+// Escalas simplificadas (µg/m³). Ajustalas si tenés tablas oficiales.
+export const SCALES = {
+  pm25: { breaks: [12, 35.4, 55.4, 150.4],   colors: ["#2E96F5","#0960E1","#E43700","#8E1100","#EAFE07"] },
+  pm10: { breaks: [54, 154, 254, 354],       colors: ["#2E96F5","#0960E1","#E43700","#8E1100","#EAFE07"] },
+  no2:  { breaks: [53, 100, 360, 649],       colors: ["#2E96F5","#0960E1","#E43700","#8E1100","#EAFE07"] },
+  o3:   { breaks: [70, 120, 160, 200],       colors: ["#2E96F5","#0960E1","#E43700","#8E1100","#EAFE07"] },
+  so2:  { breaks: [75, 185, 304, 604],       colors: ["#2E96F5","#0960E1","#E43700","#8E1100","#EAFE07"] },
+  // CO: si tu backend viene en mg/m³ y querés llevarlo a escala similar de µg/m³, usa multiplier 1000.
+  co:   { breaks: [4400, 9400, 15400, 30400], colors: ["#2E96F5","#0960E1","#E43700","#8E1100","#EAFE07"], multiplier: 1000 },
 };
 
-// Expresión de MapLibre para colorear círculos por valor
-export function colorExpression(field = 'value', pollutant = 'pm25') {
-  const breaks = BREAKSETS[pollutant] || BREAKSETS.pm25; // fallback seguro
-  if (!breaks || breaks.length < 2) {
-    console.warn(`No hay breaks definidos para '${pollutant}'. Usando pm25.`);
-  }
-  const b = breaks || BREAKSETS.pm25;
-
-  // step(value, color0, umbral1, color1, umbral2, color2, ...)
-  const expr = ['step', ['coalesce', ['to-number', ['get', field]], 0], b[0].color];
-  for (let i = 0; i < b.length - 1; i++) {
-    expr.push(b[i].max, b[i + 1].color);
+export function colorExpression(prop, pollutant) {
+  const cfg = SCALES[pollutant] || SCALES.pm25;
+  const { breaks, colors, multiplier = 1 } = cfg;
+  const base = ["*", ["to-number", ["get", prop]], multiplier];
+  const expr = ["step", base, colors[0]];
+  for (let i = 0; i < breaks.length; i++) {
+    expr.push(breaks[i], colors[i + 1] || colors[colors.length - 1]);
   }
   return expr;
+}
+
+export function legendFor(pollutant) {
+  const cfg = SCALES[pollutant] || SCALES.pm25;
+  const { breaks, colors } = cfg;
+  const items = [];
+  for (let i = 0; i <= breaks.length; i++) {
+    const color = colors[i] || colors[colors.length - 1];
+    let label;
+    if (i === 0) label = `< ${breaks[0]}`;
+    else if (i === breaks.length) label = `≥ ${breaks[breaks.length - 1]}`;
+    else label = `${breaks[i - 1]} – ${breaks[i]}`;
+    items.push({ color, label });
+  }
+  return items;
 }

@@ -1,6 +1,5 @@
-// src/theme/muiTheme.ts
 import { createTheme } from "@mui/material/styles";
-import { colors } from "./colors"; // si "colors" fuera default, usá: import colors from "./colors";
+import { colors } from "./colors";
 
 const muiTheme = createTheme({
   palette: {
@@ -59,4 +58,4 @@ const muiTheme = createTheme({
   },
 });
 
-export default muiTheme; // <-- clave
+export default muiTheme;

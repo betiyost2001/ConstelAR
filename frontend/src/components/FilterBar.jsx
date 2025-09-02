@@ -1,4 +1,3 @@
-// src/components/FilterBar.jsx
 import { Box, FormControl, FormLabel, Select } from "@chakra-ui/react";
 
 export default function FilterBar({ pollutant, onChange }) {
