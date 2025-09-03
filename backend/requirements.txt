@@ -1,4 +1,14 @@
-fastapi==0.112.2
+fastapi==0.115.0
 uvicorn==0.30.6
+SQLAlchemy==2.0.32
+alembic==1.13.2
+pydantic==2.9.2
+pydantic-settings==2.4.0
+email-validator==2.2.0
+jinja2==3.1.4
+python-dotenv==1.0.1
+redis==5.0.8
+argon2-cffi==23.1.0
+PyJWT==2.9.0
+psycopg2-binary==2.9.9
 requests==2.32.3
-watchfiles==0.22.0

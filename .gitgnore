@@ -1,19 +1,33 @@
-# Node
-node_modules/
-dist/
+# --- General ---
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.log
 
-# Python
+# --- Python / backend ---
 __pycache__/
 *.pyc
 *.pyo
 *.pyd
 .venv/
-.env
+venv/
+backend/.env
+backend/dev.db
 
-# Logs
-*.log
+# Alembic: SÍ queremos versions (migraciones)
+# Si alguna vez generaste una db local, ignórala:
+*.sqlite
+*.db
 
-# Vite/React
-*.DS_Store
-.vscode/
-.watchfiles
+# --- Node / frontend ---
+frontend/node_modules/
+frontend/dist/
+frontend/.env
+frontend/.vercel/
+frontend/.next/
+
+# --- Docker ---
+**/.dockerignore
+**/.env.local
+**/.envrc
