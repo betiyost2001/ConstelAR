@@ -12,6 +12,12 @@ El proyecto busca ofrecer **pronósticos accesibles** y **alertas tempranas** de
 
 The project aims to deliver **accessible forecasts** and **early alerts** about air pollution, supporting **public health prevention** and **citizen awareness**.  
 
+## Run the project (produdction or development)
+- Run the terminal
+- Do `Docker compose up -d --build`
+- Go to localhost:8080 for the frontend
+- Go to localhost:8000 for the backend
+
 ---
 
 ## 📅 Avances entregados – Etapa 1 / Delivered progress – Stage 1  
