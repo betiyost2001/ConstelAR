@@ -6,7 +6,10 @@ import { colorExpression } from "../constants/aqi";
 
 function debounce(fn, ms) {
   let t;
-  return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), ms); };
+  return (...args) => {
+    clearTimeout(t);
+    t = setTimeout(() => fn(...args), ms);
+  };
 }
 
 /**
@@ -19,8 +22,8 @@ function debounce(fn, ms) {
 export default function MapView({
   pollutant = "pm25",
   fetcher = fetchMeasurements,
-  center = [-64.1888, -31.4201],
-  zoom = 12,
+  center = [-98.5795, 39.8283],
+  zoom = 4,
 }) {
   const mapRef = useRef(null);
   const divRef = useRef(null);
@@ -33,7 +36,10 @@ export default function MapView({
 
     const init = () => {
       const el = divRef.current;
-      if (!el) { raf = requestAnimationFrame(init); return; }
+      if (!el) {
+        raf = requestAnimationFrame(init);
+        return;
+      }
       if (mapRef.current || el.__maplibre_initialized) return;
       el.__maplibre_initialized = true;
 
@@ -44,7 +50,8 @@ export default function MapView({
             type: "raster",
             tiles: ["https://tile.openstreetmap.org/{z}/{x}/{y}.png"],
             tileSize: 256,
-            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>',
+            attribution:
+              '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>',
           },
         },
         layers: [{ id: "osm", type: "raster", source: "osm" }],
@@ -61,13 +68,19 @@ export default function MapView({
       });
       mapRef.current = map;
 
-      map.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), "top-right");
-      map.addControl(new maplibregl.AttributionControl({ compact: true }), "bottom-right");
+      map.addControl(
+        new maplibregl.NavigationControl({ visualizePitch: true }),
+        "top-right"
+      );
+      map.addControl(
+        new maplibregl.AttributionControl({ compact: true }),
+        "bottom-right"
+      );
 
-      const SOURCE_ID  = "aq-points";
-      const LAYER_ID   = "aq-circles";
+      const SOURCE_ID = "aq-points";
+      const LAYER_ID = "aq-circles";
       const SEL_SOURCE = "selected-point";
-      const SEL_LAYER  = "selected-circle";
+      const SEL_LAYER = "selected-circle";
 
       async function loadForCurrentView() {
         abortRef.current?.abort();
@@ -76,7 +89,11 @@ export default function MapView({
 
         try {
           const bbox = bboxFromMap(map);
-          const geojson = await fetcher({ bbox, pollutant, signal: controller.signal });
+          const geojson = await fetcher({
+            bbox,
+            pollutant,
+            signal: controller.signal,
+          });
 
           if (!map.getSource(SOURCE_ID)) {
             map.addSource(SOURCE_ID, { type: "geojson", data: geojson });
@@ -86,14 +103,28 @@ export default function MapView({
               source: SOURCE_ID,
               paint: {
                 "circle-color": colorExpression("value", pollutant),
-                "circle-radius": ["interpolate", ["linear"], ["zoom"], 3, 3, 8, 6, 12, 9],
+                "circle-radius": [
+                  "interpolate",
+                  ["linear"],
+                  ["zoom"],
+                  3,
+                  3,
+                  8,
+                  6,
+                  12,
+                  9,
+                ],
                 "circle-opacity": 0.85,
               },
             });
             map.setLayoutProperty(LAYER_ID, "visibility", "none");
           } else {
             map.getSource(SOURCE_ID).setData(geojson);
-            map.setPaintProperty(LAYER_ID, "circle-color", colorExpression("value", pollutant));
+            map.setPaintProperty(
+              LAYER_ID,
+              "circle-color",
+              colorExpression("value", pollutant)
+            );
             map.setLayoutProperty(LAYER_ID, "visibility", "none");
           }
         } catch (e) {
@@ -112,8 +143,21 @@ export default function MapView({
             type: "circle",
             source: SEL_SOURCE,
             paint: {
-              "circle-color": ["case", ["has", "value"], colorExpression("value", pollutant), "#666"],
-              "circle-radius": ["interpolate", ["linear"], ["zoom"], 3, 5, 12, 10],
+              "circle-color": [
+                "case",
+                ["has", "value"],
+                colorExpression("value", pollutant),
+                "#666",
+              ],
+              "circle-radius": [
+                "interpolate",
+                ["linear"],
+                ["zoom"],
+                3,
+                5,
+                12,
+                10,
+              ],
               "circle-stroke-color": "#000",
               "circle-stroke-width": 2,
               "circle-opacity": 0.95,
@@ -128,7 +172,13 @@ export default function MapView({
 
           map.getSource(SEL_SOURCE).setData({
             type: "FeatureCollection",
-            features: [{ type: "Feature", geometry: { type: "Point", coordinates: [lng, lat] }, properties: {} }],
+            features: [
+              {
+                type: "Feature",
+                geometry: { type: "Point", coordinates: [lng, lat] },
+                properties: {},
+              },
+            ],
           });
 
           try {
@@ -137,23 +187,31 @@ export default function MapView({
               const val = Number.parseFloat(String(m.value).replace(",", "."));
               map.getSource(SEL_SOURCE).setData({
                 type: "FeatureCollection",
-                features: [{
-                  type: "Feature",
-                  geometry: { type: "Point", coordinates: [lng, lat] },
-                  properties: {
-                    parameter: m.parameter || pollutant,
-                    value: isNaN(val) ? null : val,
-                    unit: m.unit,
-                    datetime: m.datetime,
+                features: [
+                  {
+                    type: "Feature",
+                    geometry: { type: "Point", coordinates: [lng, lat] },
+                    properties: {
+                      parameter: m.parameter || pollutant,
+                      value: isNaN(val) ? null : val,
+                      unit: m.unit,
+                      datetime: m.datetime,
+                    },
                   },
-                }],
+                ],
               });
 
               const html = `
                 <div style="font-family: 'Overpass', system-ui; padding:6px 4px; color:#fff;">
-                  <div><b>${m.parameter || pollutant}</b>: ${isNaN(val) ? "-" : val.toFixed(1)} ${m.unit || ""}</div>
-                  <div style="color:#B8C0DD; font-size:12px">${m.datetime ?? ""}</div>
-                  <div style="color:#9AA3C0; font-size:11px">(${lat.toFixed(5)}, ${lng.toFixed(5)})</div>
+                  <div><b>${m.parameter || pollutant}</b>: ${
+                isNaN(val) ? "-" : val.toFixed(1)
+              } ${m.unit || ""}</div>
+                  <div style="color:#B8C0DD; font-size:12px">${
+                    m.datetime ?? ""
+                  }</div>
+                  <div style="color:#9AA3C0; font-size:11px">(${lat.toFixed(
+                    5
+                  )}, ${lng.toFixed(5)})</div>
                 </div>
               `;
               new maplibregl.Popup({ closeButton: true, maxWidth: "260px" })
@@ -172,8 +230,12 @@ export default function MapView({
       }
 
       const debounced = debounce(loadForCurrentView, 400);
-      const boot = () => { ensureSelectionLayer(); loadForCurrentView(); };
-      if (map.isStyleLoaded()) boot(); else map.once("idle", boot);
+      const boot = () => {
+        ensureSelectionLayer();
+        loadForCurrentView();
+      };
+      if (map.isStyleLoaded()) boot();
+      else map.once("idle", boot);
       map.on("moveend", debounced);
 
       resizeObsRef.current = new ResizeObserver(() => map.resize());
@@ -185,8 +247,11 @@ export default function MapView({
       cancelAnimationFrame(raf);
       abortRef.current?.abort();
       const map = mapRef.current;
-      if (map && clickHandlerRef.current) map.off("click", clickHandlerRef.current);
-      try { resizeObsRef.current?.disconnect(); } catch {}
+      if (map && clickHandlerRef.current)
+        map.off("click", clickHandlerRef.current);
+      try {
+        resizeObsRef.current?.disconnect();
+      } catch {}
       mapRef.current?.remove();
       mapRef.current = null;
       if (divRef.current) delete divRef.current.__maplibre_initialized;
@@ -198,11 +263,12 @@ export default function MapView({
     const map = mapRef.current;
     if (!map) return;
     if (map.getLayer("selected-circle")) {
-      map.setPaintProperty(
-        "selected-circle",
-        "circle-color",
-        ["case", ["has", "value"], colorExpression("value", pollutant), "#666"]
-      );
+      map.setPaintProperty("selected-circle", "circle-color", [
+        "case",
+        ["has", "value"],
+        colorExpression("value", pollutant),
+        "#666",
+      ]);
     }
   }, [pollutant]);
 

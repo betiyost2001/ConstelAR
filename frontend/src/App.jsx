@@ -1,6 +1,5 @@
 import { useState } from "react";
 import Header from "./components/Header";
-import FilterBar from "./components/FilterBar";
 import MapView from "./components/MapView";
 import Legend from "./components/Legend";
 import "./App.css";
@@ -11,11 +10,10 @@ export default function App() {
   return (
     <div className="app">
       <Header />
-      {/* Contenedor posicionado: filtro + mapa + leyenda */}
+      {/* Contenedor posicionado: mapa + leyenda con selector integrado */}
       <div style={{ position: "relative" }}>
-        <FilterBar pollutant={pollutant} onChange={setPollutant} />
         <MapView pollutant={pollutant} />
-        <Legend pollutant={pollutant} />
+        <Legend pollutant={pollutant} onPollutantChange={setPollutant} />
       </div>
     </div>
   );

@@ -8,9 +8,9 @@ RUN npm ci
 
 # copia el código y construye
 COPY . .
-# permite pasar VITE_API_URL como build-arg
-ARG VITE_API_URL
-ENV VITE_API_URL=${VITE_API_URL}
+# permite pasar VITE_API_BASE como build-arg
+ARG VITE_API_BASE
+ENV VITE_API_BASE=${VITE_API_BASE}
 RUN npm run build
 
 # ---------- runtime (nginx) ----------
