@@ -1,13 +1,18 @@
 // vite.config.js
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
+import tailwindcss from "@tailwindcss/vite";
 
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), tailwindcss()],
   server: {
     port: 5173,
     proxy: {
-      "/api": { target: "http://127.0.0.1:8000", changeOrigin: true },
+      "/api": {
+        target: "http://api:8000", // nombre del servicio docker de la API
+        changeOrigin: true,
+        secure: false,
+      },
     },
     headers: {
       "Content-Security-Policy": [
@@ -18,7 +23,7 @@ export default defineConfig({
         "font-src 'self' data:;",
         "img-src 'self' data: https://tile.openstreetmap.org;",
         // 👇 CLAVE: agregar 'self' (habilita http://localhost:5173)
-        "connect-src 'self' http://127.0.0.1:8000 ws://localhost:5173 https://tile.openstreetmap.org;",
+        "connect-src 'self' http://localhost:8000 http://127.0.0.1:8000 http://api:8000 ws://localhost:5173 https://tile.openstreetmap.org;",
       ].join(" "),
     },
   },

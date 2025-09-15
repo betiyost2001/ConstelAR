@@ -12,7 +12,8 @@ export default extendTheme({
   styles: {
     global: {
       "html, body": {
-        bg: "space.deepBlue", color: "space.white",
+        bg: "space.deepBlue",
+        color: "space.white",
       },
       p: { color: "space.white" }, // cuerpo sobre Deep/Electric/White
       a: { color: "space.neonYel" }, // destacar links con Neon Yellow (uso medido)
