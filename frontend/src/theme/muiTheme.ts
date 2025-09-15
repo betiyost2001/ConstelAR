@@ -4,12 +4,12 @@ import { colors } from "./colors";
 const muiTheme = createTheme({
   palette: {
     mode: "dark",
-    primary:   { main: colors.electric },
+    primary: { main: colors.electric },
     secondary: { main: colors.neonBlue },
-    error:     { main: colors.rocketRed },
-    warning:   { main: colors.neonYel },
-    background:{ default: colors.deepBlue, paper: "#0B1C4F" },
-    text:      { primary: colors.white },
+    error: { main: colors.rocketRed },
+    warning: { main: colors.neonYel },
+    background: { default: colors.deepBlue, paper: "#0B1C4F" },
+    text: { primary: colors.white },
   },
   typography: {
     fontFamily: "'Overpass', system-ui, sans-serif",
@@ -43,7 +43,11 @@ const muiTheme = createTheme({
         },
       },
     },
-    MuiLink: { styleOverrides: { root: { color: colors.neonYel, textUnderlineOffset: "3px" } } },
+    MuiLink: {
+      styleOverrides: {
+        root: { color: colors.neonYel, textUnderlineOffset: "3px" },
+      },
+    },
     MuiCard: {
       styleOverrides: {
         root: {
@@ -54,7 +58,11 @@ const muiTheme = createTheme({
         },
       },
     },
-    MuiAppBar: { styleOverrides: { colorPrimary: { background: "transparent", boxShadow: "none" } } },
+    MuiAppBar: {
+      styleOverrides: {
+        colorPrimary: { background: "transparent", boxShadow: "none" },
+      },
+    },
   },
 });
 

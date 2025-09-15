@@ -1,22 +1,12 @@
-.map-container {
-  position: relative;
-  width: 100%;
-  height: calc(100vh - 64px); /* ajustá según alto del header */
-  z-index: 0;
-}
+@import "tailwindcss";
 
-.spaceapps-bg {
-  background: linear-gradient(45deg, #0042A6 0%, #07173F 100%);
-}
+/* Custom styles for MapLibre GL components */
+@layer components {
+  .maplibregl-popup-content {
+    @apply bg-slate-900/90 text-white border border-white/10 rounded-xl;
+  }
 
-/* Popups y controles legibles */
-.maplibregl-popup-content {
-  background: rgba(7,23,63,.92);
-  color: #fff;
-  border: 1px solid rgba(255,255,255,.08);
-  border-radius: 12px;
-}
-.maplibregl-ctrl {
-  box-shadow: none;
-  border-radius: 10px;
+  .maplibregl-ctrl {
+    @apply shadow-none rounded-xl;
+  }
 }
