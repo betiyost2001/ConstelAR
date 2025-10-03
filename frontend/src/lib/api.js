@@ -114,4 +114,4 @@ function ensurePointGeometry(feature) {
   if (lat == null || lon == null) return null;
 
   return { type: "Point", coordinates: [lon, lat] };
-}
+}}
