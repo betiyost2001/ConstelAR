@@ -6,7 +6,7 @@ const BASE_COLORS = ["#2E96F5", "#0960E1", "#E43700", "#8E1100", "#EAFE07"];
 export const SCALES = {
   no2:  { breaks: [0.0005, 0.001, 0.002, 0.004], colors: BASE_COLORS },
   so2:  { breaks: [0.0001, 0.0003, 0.0006, 0.001], colors: BASE_COLORS },
-  o3:   { breaks: [0.02, 0.04, 0.08, 0.12], colors: BASE_COLORS }, // en Dobson Units aprox.
+  o3:   { breaks: [0.02, 0.04, 0.08, 0.12], colors: BASE_COLORS }, // DU aprox.
   hcho: { breaks: [0.0003, 0.0006, 0.0012, 0.0024], colors: BASE_COLORS },
 };
 

@@ -6,6 +6,7 @@ export default defineConfig({
   plugins: [react()],
   server: {
     port: 5173,
+    strictPort: true,
     proxy: {
       "/api": { target: "http://127.0.0.1:8000", changeOrigin: true },
     },
@@ -18,7 +19,7 @@ export default defineConfig({
         "font-src 'self' data:;",
         "img-src 'self' data: https://tile.openstreetmap.org;",
         // 👇 CLAVE: agregar 'self' (habilita http://localhost:5173)
-        "connect-src 'self' http://127.0.0.1:8000 ws://localhost:5173 https://tile.openstreetmap.org;",
+        "connect-src 'self' http://localhost:8000 http://127.0.0.1:8000 ws://localhost:5173 wss://localhost:5173 https://tile.openstreetmap.org https://basemaps.cartocdn.com https://demotiles.maplibre.org;",
       ].join(" "),
     },
   },

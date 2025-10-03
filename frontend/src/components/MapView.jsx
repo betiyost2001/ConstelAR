@@ -32,6 +32,7 @@ const MAX_BOUNDS = [
   [NORTH_AMERICA_BOUNDS.west, NORTH_AMERICA_BOUNDS.south],
   [NORTH_AMERICA_BOUNDS.east, NORTH_AMERICA_BOUNDS.north],
 ];
+
 export default function MapView({
   pollutant = DEFAULT_POLLUTANT,
   fetcher = fetchMeasurements,
