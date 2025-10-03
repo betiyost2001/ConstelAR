@@ -15,7 +15,7 @@ import { ChakraProvider } from "@chakra-ui/react";
 import chakraTheme from "./theme/chakraTheme";  // <= usa TU tema (JS)
 
 // Global CSS (gradiente, glow, etc. si lo usás)
-import "./app.css";
+import "./App.css";
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
