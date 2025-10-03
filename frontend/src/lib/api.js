@@ -1,4 +1,4 @@
-/ src/lib/api.js
+// src/lib/api.js
 import { API_TO_UI, DEFAULT_POLLUTANT, UI_TO_API } from "../constants/pollutants";
 
 // Base configurable: absoluto (http...) o relativo (/api). Default: /api

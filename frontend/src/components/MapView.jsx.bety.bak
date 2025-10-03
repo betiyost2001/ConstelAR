@@ -1,12 +1,7 @@
 import { useLayoutEffect, useRef } from "react";
 import maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
-import {
-  fetchMeasurements,
-  bboxFromMap,
-  fetchAtPoint,
-  NORTH_AMERICA_BOUNDS,
-} from "../lib/api";
+import { fetchMeasurements, bboxFromMap, fetchAtPoint } from "../lib/api";
 import { colorExpression } from "../constants/aqi";
 import {
   DEFAULT_POLLUTANT,
@@ -26,17 +21,11 @@ function debounce(fn, ms) {
  * - center?: [lng, lat]
  * - zoom?: number
  */
-const DEFAULT_CENTER = [-99, 37];
-const DEFAULT_ZOOM = 3.5;
-const MAX_BOUNDS = [
-  [NORTH_AMERICA_BOUNDS.west, NORTH_AMERICA_BOUNDS.south],
-  [NORTH_AMERICA_BOUNDS.east, NORTH_AMERICA_BOUNDS.north],
-];
 export default function MapView({
   pollutant = DEFAULT_POLLUTANT,
   fetcher = fetchMeasurements,
-  center = DEFAULT_CENTER,
-  zoom = DEFAULT_ZOOM,
+  center = [-64.1888, -31.4201],
+  zoom = 12,
 }) {
   const mapRef = useRef(null);
   const divRef = useRef(null);
@@ -71,7 +60,6 @@ export default function MapView({
         style: rasterStyle,
         center,
         zoom,
-        maxBounds: MAX_BOUNDS,
         attributionControl: false,
         pixelRatio: Math.max(1, Math.min(window.devicePixelRatio || 1, 2)),
         failIfMajorPerformanceCaveat: false,
