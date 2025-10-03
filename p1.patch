@@ -1,0 +1,75 @@
+diff --git a/frontend/src/lib/api.js b/frontend/src/lib/api.js
+index 5c19e6a35b4b12ae2737097c7db179dac7d97bf4..329d8c193c9d394ddfd2d7b7025a9ef034d65af1 100644
+--- a/frontend/src/lib/api.js
++++ b/frontend/src/lib/api.js
+@@ -16,54 +16,69 @@ function apiUrl(pathname) {
+ const UI_TO_API = {
+   pm25: "pm2_5",
+   o3: "ozone",
+   no2: "nitrogen_dioxide",
+   so2: "sulphur_dioxide",
+   co: "carbon_monoxide",
+   nh3: "ammonia",
+ };
+ const API_TO_UI = Object.fromEntries(Object.entries(UI_TO_API).map(([k, v]) => [v, k]));
+ const toApiParam = (p) => UI_TO_API[p] || p;
+ const toUiParam  = (p) => API_TO_UI[p] || p;
+ 
+ // ── Cache ────────────────────────────────────────────────────────────────────
+ const cache = new Map();
+ const TTL_MS = 30_000;
+ const cacheKey = ({ pollutant, bbox }) => `${pollutant}:${bbox.join(",")}`;
+ const setCache  = (k, v) => cache.set(k, { value: v, exp: Date.now() + TTL_MS });
+ const getCache  = (k) => {
+   const it = cache.get(k);
+   if (!it) return null;
+   if (Date.now() > it.exp) { cache.delete(k); return null; }
+   return it.value;
+ };
+ 
+ // ── Helpers ──────────────────────────────────────────────────────────────────
++export const NORTH_AMERICA_BOUNDS = {
++  west: -170,
++  south: 5,
++  east: -30,
++  north: 83,
++};
++
++const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
++
+ export function bboxFromMap(map) {
+   const b = map.getBounds();
+   const raw = [b.getWest(), b.getSouth(), b.getEast(), b.getNorth()];
+-  return raw.map((x) => +x.toFixed(3));
++  const clamped = [
++    clamp(raw[0], NORTH_AMERICA_BOUNDS.west, NORTH_AMERICA_BOUNDS.east),
++    clamp(raw[1], NORTH_AMERICA_BOUNDS.south, NORTH_AMERICA_BOUNDS.north),
++    clamp(raw[2], NORTH_AMERICA_BOUNDS.west, NORTH_AMERICA_BOUNDS.east),
++    clamp(raw[3], NORTH_AMERICA_BOUNDS.south, NORTH_AMERICA_BOUNDS.north),
++  ];
++  return clamped.map((x) => +x.toFixed(3));
+ }
+ 
+ // Normaliza a número, tolera coma decimal "12,3"
+ function toNumberSafe(v) {
+   const n = Number.parseFloat(String(v).replace(",", "."));
+   return Number.isFinite(n) ? n : null;
+ }
+ 
+ // ── Carga por vista ──────────────────────────────────────────────────────────
+ export async function fetchMeasurements({ bbox, pollutant, signal }) {
+   const [w, s, e, n] = bbox;
+   const lat = (s + n) / 2;
+   const lon = (w + e) / 2;
+   const radiusMeters = Math.min(
+     Math.hypot((e - w) * 111_000 * Math.cos((lat * Math.PI) / 180), (n - s) * 111_000) / 2,
+     50_000
+   );
+ 
+   const url = apiUrl("openaq/normalized");
+   url.searchParams.set("lat", lat.toFixed(5));
+   url.searchParams.set("lon", lon.toFixed(5));
+   url.searchParams.set("radius", String(Math.round(radiusMeters)));
+   url.searchParams.set("limit", "200");
+   url.searchParams.set("parameter", toApiParam(pollutant));
+ 

@@ -1,0 +1,103 @@
+diff --git a/frontend/src/components/MapView.jsx b/frontend/src/components/MapView.jsx
+index 7df4d5213e79ba850d7814bcd61dcadf253a96ca..3d92083fad71c89175433c9ac9942526fcada92a 100644
+--- a/frontend/src/components/MapView.jsx
++++ b/frontend/src/components/MapView.jsx
+@@ -1,82 +1,95 @@
+ import { useLayoutEffect, useRef } from "react";
+ import maplibregl from "maplibre-gl";
+ import "maplibre-gl/dist/maplibre-gl.css";
+-import { fetchMeasurements, bboxFromMap, fetchAtPoint } from "../lib/api";
++import {
++  fetchMeasurements,
++  bboxFromMap,
++  fetchAtPoint,
++  NORTH_AMERICA_BOUNDS,
++} from "../lib/api";
+ import { colorExpression } from "../constants/aqi";
+ 
+ function debounce(fn, ms) {
+   let t;
+   return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), ms); };
+ }
+ 
++const DEFAULT_CENTER = [-99, 37];
++const DEFAULT_ZOOM = 3.5;
++const MAX_BOUNDS = [
++  [NORTH_AMERICA_BOUNDS.west, NORTH_AMERICA_BOUNDS.south],
++  [NORTH_AMERICA_BOUNDS.east, NORTH_AMERICA_BOUNDS.north],
++];
++
+ /**
+  * Props:
+  * - pollutant?: "pm25" | "pm10" | "no2" | ...
+  * - fetcher?: ({bbox, pollutant, signal}) => GeoJSON
+  * - center?: [lng, lat]
+  * - zoom?: number
+  */
+ export default function MapView({
+   pollutant = "pm25",
+   fetcher = fetchMeasurements,
+-  center = [-64.1888, -31.4201],
+-  zoom = 12,
++  center = DEFAULT_CENTER,
++  zoom = DEFAULT_ZOOM,
+ }) {
+   const mapRef = useRef(null);
+   const divRef = useRef(null);
+   const abortRef = useRef(null);
+   const clickHandlerRef = useRef(null);
+   const resizeObsRef = useRef(null);
+ 
+   useLayoutEffect(() => {
+     let raf;
+ 
+     const init = () => {
+       const el = divRef.current;
+       if (!el) { raf = requestAnimationFrame(init); return; }
+       if (mapRef.current || el.__maplibre_initialized) return;
+       el.__maplibre_initialized = true;
+ 
+       const rasterStyle = {
+         version: 8,
+         sources: {
+           osm: {
+             type: "raster",
+             tiles: ["https://tile.openstreetmap.org/{z}/{x}/{y}.png"],
+             tileSize: 256,
+             attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>',
+           },
+         },
+         layers: [{ id: "osm", type: "raster", source: "osm" }],
+       };
+ 
+       const map = new maplibregl.Map({
+         container: el,
+         style: rasterStyle,
+         center,
+         zoom,
++        maxBounds: MAX_BOUNDS,
+         attributionControl: false,
+         pixelRatio: Math.max(1, Math.min(window.devicePixelRatio || 1, 2)),
+         failIfMajorPerformanceCaveat: false,
+       });
+       mapRef.current = map;
+ 
+       map.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), "top-right");
+       map.addControl(new maplibregl.AttributionControl({ compact: true }), "bottom-right");
+ 
+       const SOURCE_ID  = "aq-points";
+       const LAYER_ID   = "aq-circles";
+       const SEL_SOURCE = "selected-point";
+       const SEL_LAYER  = "selected-circle";
+ 
+       async function loadForCurrentView() {
+         abortRef.current?.abort();
+         const controller = new AbortController();
+         abortRef.current = controller;
+ 
+         try {
+           const bbox = bboxFromMap(map);
+           const geojson = await fetcher({ bbox, pollutant, signal: controller.signal });
+ 
+           if (!map.getSource(SOURCE_ID)) {
+             map.addSource(SOURCE_ID, { type: "geojson", data: geojson });
