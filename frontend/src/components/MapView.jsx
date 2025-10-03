@@ -3,6 +3,11 @@ import maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { fetchMeasurements, bboxFromMap, fetchAtPoint } from "../lib/api";
 import { colorExpression } from "../constants/aqi";
+import {
+  DEFAULT_POLLUTANT,
+  getPollutantLabel,
+  getPollutantUnit,
+} from "../constants/pollutants";
 
 function debounce(fn, ms) {
   let t;
@@ -11,13 +16,13 @@ function debounce(fn, ms) {
 
 /**
  * Props:
- * - pollutant?: "pm25" | "pm10" | "no2" | ...
+ * - pollutant?: contaminante soportado por TEMPO
  * - fetcher?: ({bbox, pollutant, signal}) => GeoJSON
  * - center?: [lng, lat]
  * - zoom?: number
  */
 export default function MapView({
-  pollutant = "pm25",
+  pollutant = DEFAULT_POLLUTANT,
   fetcher = fetchMeasurements,
   center = [-64.1888, -31.4201],
   zoom = 12,
@@ -134,24 +139,28 @@ export default function MapView({
           try {
             const m = await fetchAtPoint({ lat, lon: lng, pollutant });
             if (m) {
-              const val = Number.parseFloat(String(m.value).replace(",", "."));
+              const parameterId = m.parameter || pollutant;
+              const val = toSafeNumber(m.value);
+              const unit = m.unit || getPollutantUnit(parameterId);
+
               map.getSource(SEL_SOURCE).setData({
                 type: "FeatureCollection",
                 features: [{
                   type: "Feature",
                   geometry: { type: "Point", coordinates: [lng, lat] },
                   properties: {
-                    parameter: m.parameter || pollutant,
-                    value: isNaN(val) ? null : val,
-                    unit: m.unit,
+                    parameter: parameterId,
+                    value: val,
+                    unit,
                     datetime: m.datetime,
                   },
                 }],
               });
 
+              const label = getPollutantLabel(parameterId);
               const html = `
                 <div style="font-family: 'Overpass', system-ui; padding:6px 4px; color:#fff;">
-                  <div><b>${m.parameter || pollutant}</b>: ${isNaN(val) ? "-" : val.toFixed(1)} ${m.unit || ""}</div>
+                  <div><b>${label}</b>: ${Number.isFinite(val) ? val.toFixed(3) : "-"} ${unit || ""}</div>
                   <div style="color:#B8C0DD; font-size:12px">${m.datetime ?? ""}</div>
                   <div style="color:#9AA3C0; font-size:11px">(${lat.toFixed(5)}, ${lng.toFixed(5)})</div>
                 </div>
@@ -214,4 +223,10 @@ export default function MapView({
       role="region"
     />
   );
+}
+
+function toSafeNumber(value) {
+  if (value == null) return null;
+  const parsed = Number.parseFloat(String(value).replace(",", "."));
+  return Number.isFinite(parsed) ? parsed : null;
 }

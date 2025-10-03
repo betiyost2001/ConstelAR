@@ -1,4 +1,5 @@
 import { Box, FormControl, FormLabel, Select } from "@chakra-ui/react";
+import { TEMPO_POLLUTANTS, getPollutantLabel } from "../constants/pollutants";
 
 export default function FilterBar({ pollutant, onChange }) {
   return (
@@ -20,12 +21,11 @@ export default function FilterBar({ pollutant, onChange }) {
           bg="white"
           color="black"
         >
-          <option value="pm25">PM2.5</option>
-          <option value="pm10">PM10</option>
-          <option value="no2">NO₂</option>
-          <option value="o3">O₃</option>
-          <option value="so2">SO₂</option>
-          <option value="co">CO</option>
+          {TEMPO_POLLUTANTS.map((item) => (
+            <option key={item.id} value={item.id}>
+              {getPollutantLabel(item.id)}
+            </option>
+          ))}
         </Select>
       </FormControl>
     </Box>
