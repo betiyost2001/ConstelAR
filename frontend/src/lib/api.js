@@ -1,4 +1,5 @@
-// src/lib/api.js
+/ src/lib/api.js
+import { API_TO_UI, DEFAULT_POLLUTANT, UI_TO_API } from "../constants/pollutants";
 
 // Base configurable: absoluto (http...) o relativo (/api). Default: /api
 const RAW_BASE = (import.meta.env.VITE_API_BASE || "/api").trim();
@@ -13,15 +14,6 @@ function apiUrl(pathname) {
 }
 
 // ── Alias UI ↔ API ───────────────────────────────────────────────────────────
-const UI_TO_API = {
-  pm25: "pm2_5",
-  o3: "ozone",
-  no2: "nitrogen_dioxide",
-  so2: "sulphur_dioxide",
-  co: "carbon_monoxide",
-  nh3: "ammonia",
-};
-const API_TO_UI = Object.fromEntries(Object.entries(UI_TO_API).map(([k, v]) => [v, k]));
 const toApiParam = (p) => UI_TO_API[p] || p;
 const toUiParam  = (p) => API_TO_UI[p] || p;
 
@@ -52,20 +44,10 @@ function toNumberSafe(v) {
 
 // ── Carga por vista ──────────────────────────────────────────────────────────
 export async function fetchMeasurements({ bbox, pollutant, signal }) {
-  const [w, s, e, n] = bbox;
-  const lat = (s + n) / 2;
-  const lon = (w + e) / 2;
-  const radiusMeters = Math.min(
-    Math.hypot((e - w) * 111_000 * Math.cos((lat * Math.PI) / 180), (n - s) * 111_000) / 2,
-    50_000
-  );
-
-  const url = apiUrl("openaq/normalized");
-  url.searchParams.set("lat", lat.toFixed(5));
-  url.searchParams.set("lon", lon.toFixed(5));
-  url.searchParams.set("radius", String(Math.round(radiusMeters)));
-  url.searchParams.set("limit", "200");
+  const url = apiUrl("tempo/measurements");
+  url.searchParams.set("bbox", bbox.map((x) => x.toFixed(3)).join(","));
   url.searchParams.set("parameter", toApiParam(pollutant));
+  url.searchParams.set("limit", "500");
 
   const key = cacheKey({ pollutant, bbox });
   const fromCache = getCache(key);
@@ -75,48 +57,61 @@ export async function fetchMeasurements({ bbox, pollutant, signal }) {
   if (!res.ok) throw new Error(`API ${res.status}`);
   const data = await res.json();
 
-  // GeoJSON normalizado (parámetro en nombre UI y value numérico)
-  const fc = {
-    type: "FeatureCollection",
-    features: (data.results || []).map((r) => ({
-      type: "Feature",
-      // Ajustá si tu API usa otras keys: longitude/latitude
-      geometry: { type: "Point", coordinates: [r.lon, r.lat] },
-      properties: {
-        parameter: toUiParam(r.parameter),
-        value: toNumberSafe(r.value),
-        unit: r.unit,
-        datetime: r.datetime,
-      },
-    })),
-  };
+  const features = normalizeFeatureCollection(data, { pollutant });
+  const fc = { type: "FeatureCollection", features };
 
   setCache(key, fc);
   return fc;
 }
 
 // ── Consulta puntual (click) ────────────────────────────────────────────────
-export async function fetchAtPoint({ lat, lon, pollutant = "pm25", signal }) {
-  const url = apiUrl("openaq/normalized");
-  url.searchParams.set("lat", lat.toFixed(5));
-  url.searchParams.set("lon", lon.toFixed(5));
-  url.searchParams.set("radius", "2000");
-  url.searchParams.set("limit", "20");
+export async function fetchAtPoint({ lat, lon, pollutant = DEFAULT_POLLUTANT, signal }) {
+  const delta = 0.15; // ~15 km de radio alrededor del punto
+  const bbox = [
+    lon - delta,
+    lat - delta,
+    lon + delta,
+    lat + delta,
+  ];
+
+  const url = apiUrl("tempo/measurements");
+  url.searchParams.set("bbox", bbox.map((x) => x.toFixed(3)).join(","));
   url.searchParams.set("parameter", toApiParam(pollutant));
+  url.searchParams.set("limit", "20");
 
   const res = await fetch(url, { signal });
   if (!res.ok) throw new Error(`API ${res.status}`);
   const data = await res.json();
 
-  const list = Array.isArray(data?.results) ? data.results : [];
-  const byPollutant = list
-    .map((r) => ({ ...r, parameter: toUiParam(r.parameter) }))
-    .filter((r) => r.parameter === pollutant);
+  const features = normalizeFeatureCollection(data, { pollutant });
+  const match = features.find((f) => f.properties.parameter === pollutant);
+  const picked = match || features[0] || null;
 
-  const pickedRaw =
-    byPollutant[0] ||
-    (list[0] && { ...list[0], parameter: toUiParam(list[0].parameter) }) ||
-    null;
+  return picked ? { ...picked.properties } : null;
+}
 
-  return pickedRaw ? { ...pickedRaw, value: toNumberSafe(pickedRaw.value) } : null;
+function normalizeFeatureCollection(data, { pollutant }) {
+  const rawFeatures = Array.isArray(data?.features)
+    ? data.features
+    : Array.isArray(data?.results)
+      ? data.results
+      : Array.isArray(data?.data)
+        ? data.data
+        : [];
+
+function ensurePointGeometry(feature) {
+  const geom = feature.geometry;
+  if (geom?.type === "Point" && Array.isArray(geom.coordinates) && geom.coordinates.length >= 2) {
+    const [lon, lat] = geom.coordinates;
+    if (Number.isFinite(lon) && Number.isFinite(lat)) {
+      return { type: "Point", coordinates: [lon, lat] };
+    }
+  }
+
+  const src = feature.properties ?? feature;
+  const lon = toNumberSafe(src.lon ?? src.longitude ?? src.x ?? feature.lon ?? feature.longitude);
+  const lat = toNumberSafe(src.lat ?? src.latitude ?? src.y ?? feature.lat ?? feature.latitude);
+  if (lat == null || lon == null) return null;
+
+  return { type: "Point", coordinates: [lon, lat] };
 }

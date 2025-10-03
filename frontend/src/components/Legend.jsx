@@ -1,7 +1,8 @@
 import { Box, Flex, Text, Stack } from "@chakra-ui/react";
 import { legendFor } from "../constants/aqi";
+import { DEFAULT_POLLUTANT, getPollutantLabel, getPollutantUnit } from "../constants/pollutants";
 
-export default function Legend({ pollutant = "pm25", position = "bottom-right" }) {
+export default function Legend({ pollutant = DEFAULT_POLLUTANT, position = "bottom-right" }) {
   const items = legendFor(pollutant);
   const pos = {
     "bottom-right": { bottom: 4, right: 4 },
@@ -9,6 +10,8 @@ export default function Legend({ pollutant = "pm25", position = "bottom-right" }
     "top-right": { top: 4, right: 4 },
     "top-left": { top: 4, left: 4 },
   }[position];
+  const label = getPollutantLabel(pollutant);
+  const unit = getPollutantUnit(pollutant);
 
   return (
     <Box position="absolute" {...pos} zIndex={1000}>
@@ -21,7 +24,7 @@ export default function Legend({ pollutant = "pm25", position = "bottom-right" }
         minW="240px"
       >
         <Text fontWeight="900" mb={3}>
-          {pollutant.toUpperCase()} (µg/m³)
+          {label} ({unit})
         </Text>
         <Stack spacing={2}>
           {items.map((it, i) => (

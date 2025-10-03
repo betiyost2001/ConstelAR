@@ -1,16 +1,17 @@
-// Escalas simplificadas (µg/m³). Ajustalas si tenés tablas oficiales.
+import { DEFAULT_POLLUTANT } from "./pollutants";
+
+// Escalas simplificadas para columnas troposféricas (mol/m² o DU según parámetro).
+const BASE_COLORS = ["#2E96F5", "#0960E1", "#E43700", "#8E1100", "#EAFE07"];
+
 export const SCALES = {
-  pm25: { breaks: [12, 35.4, 55.4, 150.4],   colors: ["#2E96F5","#0960E1","#E43700","#8E1100","#EAFE07"] },
-  pm10: { breaks: [54, 154, 254, 354],       colors: ["#2E96F5","#0960E1","#E43700","#8E1100","#EAFE07"] },
-  no2:  { breaks: [53, 100, 360, 649],       colors: ["#2E96F5","#0960E1","#E43700","#8E1100","#EAFE07"] },
-  o3:   { breaks: [70, 120, 160, 200],       colors: ["#2E96F5","#0960E1","#E43700","#8E1100","#EAFE07"] },
-  so2:  { breaks: [75, 185, 304, 604],       colors: ["#2E96F5","#0960E1","#E43700","#8E1100","#EAFE07"] },
-  // CO: si tu backend viene en mg/m³ y querés llevarlo a escala similar de µg/m³, usa multiplier 1000.
-  co:   { breaks: [4400, 9400, 15400, 30400], colors: ["#2E96F5","#0960E1","#E43700","#8E1100","#EAFE07"], multiplier: 1000 },
+  no2:  { breaks: [0.0005, 0.001, 0.002, 0.004], colors: BASE_COLORS },
+  so2:  { breaks: [0.0001, 0.0003, 0.0006, 0.001], colors: BASE_COLORS },
+  o3:   { breaks: [0.02, 0.04, 0.08, 0.12], colors: BASE_COLORS }, // en Dobson Units aprox.
+  hcho: { breaks: [0.0003, 0.0006, 0.0012, 0.0024], colors: BASE_COLORS },
 };
 
 export function colorExpression(prop, pollutant) {
-  const cfg = SCALES[pollutant] || SCALES.pm25;
+  const cfg = SCALES[pollutant] || SCALES[DEFAULT_POLLUTANT];
   const { breaks, colors, multiplier = 1 } = cfg;
   const base = ["*", ["to-number", ["get", prop]], multiplier];
   const expr = ["step", base, colors[0]];
@@ -21,7 +22,7 @@ export function colorExpression(prop, pollutant) {
 }
 
 export function legendFor(pollutant) {
-  const cfg = SCALES[pollutant] || SCALES.pm25;
+  const cfg = SCALES[pollutant] || SCALES[DEFAULT_POLLUTANT];
   const { breaks, colors } = cfg;
   const items = [];
   for (let i = 0; i <= breaks.length; i++) {
