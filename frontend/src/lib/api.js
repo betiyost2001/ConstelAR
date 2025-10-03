@@ -1,6 +1,13 @@
 // src/lib/api.js
 import { API_TO_UI, DEFAULT_POLLUTANT, UI_TO_API } from "../constants/pollutants";
 
+// Forzamos el path del router a "openaq" (evita que vaya a /tempo)
+const TEMPO_PATH = "openaq";
+console.log("[API] TEMPO_PATH =", TEMPO_PATH);
+
+// Límites por defecto (usados por el Map)
+export const NORTH_AMERICA_BOUNDS = { west: -168, south: 5, east: -52, north: 83 };
+
 // Base configurable: absoluto (http...) o relativo (/api). Default: /api
 const RAW_BASE = (import.meta.env.VITE_API_BASE || "/api").trim();
 
@@ -42,12 +49,24 @@ function toNumberSafe(v) {
   return Number.isFinite(n) ? n : null;
 }
 
-// ── Carga por vista ──────────────────────────────────────────────────────────
+// ── Carga por vista (usa lat/lon/radius porque tu backend aún no acepta bbox) ──
 export async function fetchMeasurements({ bbox, pollutant, signal }) {
-  const url = apiUrl("tempo/measurements");
-  url.searchParams.set("bbox", bbox.map((x) => x.toFixed(3)).join(","));
+  // Centro y radio aproximado a partir del BBOX
+  const [w, s, e, n] = bbox;
+  const lat = (s + n) / 2;
+  const lon = (w + e) / 2;
+  const latKm = 111_000;
+  const lonKm = 111_000 * Math.cos((lat * Math.PI) / 180);
+  const rx = (Math.abs(e - w) * lonKm) / 2;
+  const ry = (Math.abs(n - s) * latKm) / 2;
+  const radius = Math.min(Math.hypot(rx, ry), 50_000); // máx. 50 km
+
+  const url = apiUrl(`${TEMPO_PATH}/normalized`);
+  url.searchParams.set("lat", lat.toFixed(5));
+  url.searchParams.set("lon", lon.toFixed(5));
+  url.searchParams.set("radius", String(Math.round(radius)));
+  url.searchParams.set("limit", "200");
   url.searchParams.set("parameter", toApiParam(pollutant));
-  url.searchParams.set("limit", "500");
 
   const key = cacheKey({ pollutant, bbox });
   const fromCache = getCache(key);
@@ -64,20 +83,14 @@ export async function fetchMeasurements({ bbox, pollutant, signal }) {
   return fc;
 }
 
-// ── Consulta puntual (click) ────────────────────────────────────────────────
+// ── Consulta puntual (click) — también usa lat/lon/radius ────────────────────
 export async function fetchAtPoint({ lat, lon, pollutant = DEFAULT_POLLUTANT, signal }) {
-  const delta = 0.15; // ~15 km de radio alrededor del punto
-  const bbox = [
-    lon - delta,
-    lat - delta,
-    lon + delta,
-    lat + delta,
-  ];
-
-  const url = apiUrl("tempo/measurements");
-  url.searchParams.set("bbox", bbox.map((x) => x.toFixed(3)).join(","));
-  url.searchParams.set("parameter", toApiParam(pollutant));
+  const url = apiUrl(`${TEMPO_PATH}/normalized`);
+  url.searchParams.set("lat", lat.toFixed(5));
+  url.searchParams.set("lon", lon.toFixed(5));
+  url.searchParams.set("radius", "2000"); // 2 km
   url.searchParams.set("limit", "20");
+  url.searchParams.set("parameter", toApiParam(pollutant));
 
   const res = await fetch(url, { signal });
   if (!res.ok) throw new Error(`API ${res.status}`);
@@ -90,8 +103,9 @@ export async function fetchAtPoint({ lat, lon, pollutant = DEFAULT_POLLUTANT, si
   return picked ? { ...picked.properties } : null;
 }
 
+// ── Normalización de respuestas ──────────────────────────────────────────────
 function normalizeFeatureCollection(data, { pollutant }) {
-  const rawFeatures = Array.isArray(data?.features)
+  const raw = Array.isArray(data?.features)
     ? data.features
     : Array.isArray(data?.results)
       ? data.results
@@ -99,19 +113,72 @@ function normalizeFeatureCollection(data, { pollutant }) {
         ? data.data
         : [];
 
+  return raw
+    .map((feature) => normalizeFeature(feature, pollutant))
+    .filter(Boolean);
+}
+
+function normalizeFeature(feature, fallbackPollutant) {
+  if (!feature) return null;
+
+  // Si ya viene como Feature con geometry, usamos eso
+  let geometry = ensurePointGeometry(feature);
+
+  // Si es un objeto "plano" (lat/lon/parameter/value...), lo convertimos
+  if (!geometry) {
+    const lon = toNumberSafe(feature.lon ?? feature.longitude ?? feature.x);
+    const lat = toNumberSafe(feature.lat ?? feature.latitude ?? feature.y);
+    if (lat != null && lon != null) {
+      geometry = { type: "Point", coordinates: [lon, lat] };
+    } else {
+      return null;
+    }
+  }
+
+  const srcProps = feature.properties ?? feature;
+  const parameterRaw =
+    srcProps.parameter ??
+    srcProps.pollutant ??
+    srcProps.species ??
+    srcProps.product ??
+    fallbackPollutant;
+
+  const valueRaw =
+    srcProps.value ??
+    srcProps.measurement ??
+    srcProps.average ??
+    srcProps.avg ??
+    srcProps.mean ??
+    null;
+
+  const datetime =
+    srcProps.datetime ??
+    srcProps.timestamp ??
+    srcProps.time ??
+    srcProps.date ??
+    null;
+
+  const unit = srcProps.unit ?? srcProps.units ?? srcProps.unit_of_measurement ?? "";
+
+  return {
+    type: "Feature",
+    geometry,
+    properties: {
+      parameter: toUiParam(parameterRaw),
+      value: toNumberSafe(valueRaw),
+      unit,
+      datetime,
+    },
+  };
+}
+
 function ensurePointGeometry(feature) {
-  const geom = feature.geometry;
+  const geom = feature?.geometry;
   if (geom?.type === "Point" && Array.isArray(geom.coordinates) && geom.coordinates.length >= 2) {
     const [lon, lat] = geom.coordinates;
     if (Number.isFinite(lon) && Number.isFinite(lat)) {
       return { type: "Point", coordinates: [lon, lat] };
     }
   }
-
-  const src = feature.properties ?? feature;
-  const lon = toNumberSafe(src.lon ?? src.longitude ?? src.x ?? feature.lon ?? feature.longitude);
-  const lat = toNumberSafe(src.lat ?? src.latitude ?? src.y ?? feature.lat ?? feature.latitude);
-  if (lat == null || lon == null) return null;
-
-  return { type: "Point", coordinates: [lon, lat] };
-}}
+  return null;
+}
