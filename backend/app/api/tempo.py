@@ -1,13 +1,19 @@
+# backend/app/api/tempo.py
 from __future__ import annotations
 
+import io
 import os
 from datetime import datetime, timedelta, timezone
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 
+import numpy as np
 import requests
+import xarray as xr
 from fastapi import APIRouter, HTTPException, Query
 
 router = APIRouter(tags=["NASA TEMPO"])
+
+# ───────────────── helpers de entorno/fechas ─────────────────
 
 def _env(name: str, default: Optional[str] = None) -> Optional[str]:
     v = os.getenv(name)
@@ -23,18 +29,15 @@ def _default_range() -> Tuple[str, str]:
     start = end - timedelta(hours=24)
     return _utc_iso(start), _utc_iso(end)
 
-# === Config por entorno ===
+# ───────────────── config ─────────────────
+
 HARMONY_ROOT = _env("HARMONY_ROOT", "https://harmony.earthdata.nasa.gov")
 
-# IDs de colecciones (CMR concept-id) para TEMPO L2 v03 en LARC_CLOUD (ejemplos):
-# Si tenés otras versiones/IDs, podés sobreescribir por env.
-COLL_NO2 = _env("TEMPO_COLLECTION_NO2", "C2930725014-LARC_CLOUD")
-COLL_SO2 = _env("TEMPO_COLLECTION_SO2", "C2930725337-LARC_CLOUD")
-COLL_O3  = _env("TEMPO_COLLECTION_O3",  "C2930725020-LARC_CLOUD")
-COLL_HCHO= _env("TEMPO_COLLECTION_HCHO","C2930725347-LARC_CLOUD")
+COLL_NO2  = _env("TEMPO_COLLECTION_NO2",  "C2930725014-LARC_CLOUD")
+COLL_SO2  = _env("TEMPO_COLLECTION_SO2",  "C2930725337-LARC_CLOUD")
+COLL_O3   = _env("TEMPO_COLLECTION_O3",   "C2930725020-LARC_CLOUD")
+COLL_HCHO = _env("TEMPO_COLLECTION_HCHO", "C2930725347-LARC_CLOUD")
 
-# Mapeo simple UI->colección y -> nombre de variable (puede variar por producto)
-# Si una variable no coincide, Harmony devuelve 404. Ajustá por producto/versión.
 POLLUTANTS: Dict[str, Tuple[str, str]] = {
     "no2":  (COLL_NO2,  _env("TEMPO_VAR_NO2",  "nitrogendioxide_tropospheric_column")),
     "so2":  (COLL_SO2,  _env("TEMPO_VAR_SO2",  "sulfurdioxide_total_column")),
@@ -42,39 +45,21 @@ POLLUTANTS: Dict[str, Tuple[str, str]] = {
     "hcho": (COLL_HCHO, _env("TEMPO_VAR_HCHO", "formaldehyde_tropospheric_column")),
 }
 
-EARTHDATA_TOKEN = _env("EARTHDATA_TOKEN")  # obligatorio para colecciones protegidas
+EARTHDATA_TOKEN = _env("EARTHDATA_TOKEN")  # obligatorio
 
-def _headers() -> Dict[str, str]:
-    h = {"Accept": "application/json"}
+def _headers_json() -> Dict[str, str]:
+    h = {"Accept": "application/geo+json"}
     if EARTHDATA_TOKEN:
         h["Authorization"] = f"Bearer {EARTHDATA_TOKEN}"
     return h
 
-def _bbox_str(b: Tuple[float, float, float, float]) -> str:
-    west, south, east, north = b
-    # Harmony OGC Coverages usa subset=lon(a:b)&subset=lat(a:b)
-    return f"subset=lon({west}:{east})&subset=lat({south}:{north})"
+def _headers_netcdf() -> Dict[str, str]:
+    h = {"Accept": "application/x-netcdf"}
+    if EARTHDATA_TOKEN:
+        h["Authorization"] = f"Bearer {EARTHDATA_TOKEN}"
+    return h
 
-def _request_json(url: str, params: Dict[str, Any]) -> Dict[str, Any]:
-    try:
-        r = requests.get(url, params=params, headers=_headers(), timeout=60)
-    except requests.RequestException as exc:
-        raise HTTPException(status_code=502, detail=f"Harmony connection error: {exc}") from exc
-
-    if r.status_code == 401 or r.status_code == 403:
-        raise HTTPException(status_code=401, detail="Earthdata token/credenciales inválidas o faltantes")
-    if r.status_code == 404:
-        # Devolvemos vacío para que el front no caiga
-        return {"features": []}
-    if r.status_code >= 400:
-        raise HTTPException(status_code=502, detail=f"Harmony error {r.status_code}: {r.text[:200]}")
-
-    # Algunas respuestas no son JSON (por ej. NetCDF). Pedimos GeoJSON en 'format'
-    try:
-        return r.json()
-    except ValueError:
-        # Si no es JSON, devolvemos vacío
-        return {"features": []}
+ParamsType = Union[Dict[str, Any], Sequence[Tuple[str, Any]]]
 
 def _pick_collection_and_var(parameter: str) -> Tuple[str, str]:
     p = parameter.lower()
@@ -85,8 +70,45 @@ def _pick_collection_and_var(parameter: str) -> Tuple[str, str]:
         raise HTTPException(status_code=422, detail=f"Config faltante para {parameter}")
     return coll, var
 
+# ───────────────── HTTP helpers ─────────────────
+
+def _get_json(url: str, params: ParamsType) -> Dict[str, Any]:
+    try:
+        r = requests.get(url, params=params, headers=_headers_json(), timeout=90)
+    except requests.RequestException as exc:
+        raise HTTPException(status_code=502, detail=f"Harmony connection error: {exc}") from exc
+
+    if r.status_code in (401, 403):
+        raise HTTPException(status_code=401, detail="Earthdata token/credenciales inválidas o faltantes")
+    if r.status_code == 404:
+        return {"type": "FeatureCollection", "features": []}
+    if r.status_code >= 400:
+        raise HTTPException(status_code=502, detail={
+            "harmony_error": {"status": r.status_code, "url": r.request.url if r.request else url, "body": r.text[:4000]}
+        })
+    try:
+        return r.json()
+    except ValueError:
+        return {"type": "FeatureCollection", "features": []}
+
+def _get_netcdf_bytes(url: str, params: ParamsType) -> bytes:
+    try:
+        r = requests.get(url, params=params, headers=_headers_netcdf(), timeout=180)
+    except requests.RequestException as exc:
+        raise HTTPException(status_code=502, detail=f"Harmony connection error: {exc}") from exc
+    if r.status_code in (401, 403):
+        raise HTTPException(status_code=401, detail="Earthdata token/credenciales inválidas o faltantes")
+    if r.status_code == 404:
+        return b""
+    if r.status_code >= 400:
+        raise HTTPException(status_code=502, detail={
+            "harmony_error": {"status": r.status_code, "url": r.request.url if r.request else url, "body": r.text[:4000]}
+        })
+    return r.content or b""
+
+# ───────────────── normalización a lista de puntos ─────────────────
+
 def _normalize_geojson(payload: Dict[str, Any], fallback_param: str, limit: int) -> List[List[Any]]:
-    # Esperamos features tipo Point con propiedades {value, unit, datetime}
     feats = payload.get("features") or []
     out: List[List[Any]] = []
     for f in feats:
@@ -110,6 +132,97 @@ def _normalize_geojson(payload: Dict[str, Any], fallback_param: str, limit: int)
             break
     return out
 
+def _sample_grid_to_points(
+    ds: xr.Dataset, var: str, parameter: str, limit: int
+) -> List[List[Any]]:
+    """
+    Convierte una grilla (NetCDF) a <= limit puntos:
+    - Detecta coords lat/lon (o y/x con attrs)
+    - Toma un "thinning" regular para no explotar el front
+    - Produce datetime a partir de time si existe
+    """
+    if var not in ds:
+        # variable inexistente
+        return []
+
+    # Detectar dims y coords
+    da = ds[var]
+    # intentar mapeo común
+    lat_name = None
+    lon_name = None
+    for cand in ["lat", "latitude", "y"]:
+        if cand in ds.coords:
+            lat_name = cand
+            break
+        if cand in da.dims:
+            lat_name = cand
+            break
+    for cand in ["lon", "longitude", "x"]:
+        if cand in ds.coords:
+            lon_name = cand
+            break
+        if cand in da.dims:
+            lon_name = cand
+            break
+    if not lat_name or not lon_name:
+        return []
+
+    lat = ds[lat_name].values
+    lon = ds[lon_name].values
+    arr = da.values
+
+    # Soporte de tiempo (opcional)
+    dt_iso = None
+    for tname in ["time", "t", "datetime"]:
+        if tname in ds.coords:
+            try:
+                # xarray convierte a np.datetime64
+                dt_val = ds[tname].values
+                # si es array, tomo el primero
+                if isinstance(dt_val, np.ndarray):
+                    dt_val = dt_val[0]
+                # a ISO
+                dt_iso = np.datetime_as_string(dt_val, unit="s")
+            except Exception:
+                pass
+            break
+
+    # Si la variable tiene 3 dims (time, lat, lon), colapsar tiempo en el índice 0
+    if arr.ndim == 3:
+        arr = arr[0, ...]
+    # Si la variable tiene (lat, lon) estamos ok
+    if arr.ndim != 2:
+        return []
+
+    nlat, nlon = arr.shape
+    if nlat < 1 or nlon < 1:
+        return []
+
+    # calculo paso para no exceder 'limit'. Queremos un muestreo regular
+    # tomamos sqrt(limit) por lado
+    k = max(1, int(np.sqrt((nlat * nlon) / max(1, limit))))
+    idx_lat = np.arange(0, nlat, k)
+    idx_lon = np.arange(0, nlon, k)
+
+    # valor de unidad: imposible saber con certeza desde NetCDF — ponemos por defecto
+    unit = ds[var].attrs.get("units", "")
+
+    out: List[List[Any]] = []
+    for i in idx_lat:
+        for j in idx_lon:
+            v = arr[i, j]
+            if v is np.nan or v is None:
+                continue
+            # vectorizar lon/lat según sean coords 1D o 2D
+            lat_val = lat[i] if lat.ndim == 1 else lat[i, j]
+            lon_val = lon[j] if lon.ndim == 1 else lon[i, j]
+            out.append([float(lat_val), float(lon_val), parameter, float(v), unit, dt_iso or ""])
+            if len(out) >= limit:
+                return out
+    return out
+
+# ───────────────── endpoint principal ─────────────────
+
 @router.get("/normalized")
 def normalized(
     parameter: str = Query("no2", description="no2|o3|so2|hcho"),
@@ -121,18 +234,17 @@ def normalized(
     end: Optional[datetime] = Query(None, description="UTC ISO"),
 ):
     """
-    Devuelve mediciones normalizadas TEMPO:
+    Devuelve mediciones TEMPO normalizadas:
     results: [[lat, lon, parameter, value, unit, datetime], ...]
+    1) Intenta GeoJSON (si el servicio publica puntos)
+    2) Si no hay features, pide NetCDF, muestrea grilla y devuelve puntos
     """
     coll, var = _pick_collection_and_var(parameter)
 
     # bbox o punto +/- ~0.2°
     if bbox:
         try:
-            parts = [float(x.strip()) for x in bbox.split(",")]
-            if len(parts) != 4:
-                raise ValueError
-            west, south, east, north = parts
+            west, south, east, north = [float(x.strip()) for x in bbox.split(",")]
         except Exception:
             raise HTTPException(status_code=422, detail="bbox inválido. Formato: minLon,minLat,maxLon,maxLat")
     else:
@@ -145,39 +257,67 @@ def normalized(
     if not start_iso or not end_iso:
         start_iso, end_iso = _default_range()
 
-    # URL OGC Coverages (rangeset). Intentamos GeoJSON de puntos si el servicio lo permite
-    # Formato: https://harmony.earthdata.nasa.gov/{collectionId}/ogc-api-coverages/1.0.0/{variable}/coverage/rangeset
-    url = f"{HARMONY_ROOT}/{coll}/ogc-api-coverages/1.0.0/{var}/coverage/rangeset"
+    # Ruta A: OGC Coverages (GeoJSON) con rangeSubset
+    urlA = f"{HARMONY_ROOT}/ogc-api-coverages/collections/{coll}/coverage/rangeset"
+    paramsA: List[Tuple[str, Any]] = [
+        ("accept", "application/geo+json"),
+        ("datetime", f"{start_iso}/{end_iso}"),
+        ("outputCrs", "EPSG:4326"),
+        ("count", str(limit)),
+        ("subset", f"lon({west}:{east})"),
+        ("subset", f"lat({south}:{north})"),
+        ("rangeSubset", var),
+    ]
+    payloadA = _get_json(urlA, paramsA)
+    results = _normalize_geojson(payloadA, fallback_param=parameter, limit=limit)
+    if results:
+        return {"source": "nasa-tempo", "results": results}
 
-    query = {
-        # Subsetting espacial y temporal
-        "subset": [f"lon({west}:{east})", f"lat({south}:{north})"],
-        "datetime": f"{start_iso}/{end_iso}",
-        # Formato GeoJSON (si no está disponible, Harmony puede devolver otro formato -> devolvemos vacío)
-        "format": "application/geo+json",
-        # Por si el servicio soporta muestreo (algunos drivers lo exponen)
-        "maxResults": str(limit),
-    }
+    # Ruta B: variable en el path (algunos deployments usan esta convención)
+    urlB = f"{HARMONY_ROOT}/{coll}/ogc-api-coverages/1.0.0/{var}/coverage/rangeset"
+    paramsB: List[Tuple[str, Any]] = [
+        ("accept", "application/geo+json"),
+        ("datetime", f"{start_iso}/{end_iso}"),
+        ("outputCrs", "EPSG:4326"),
+        ("count", str(limit)),
+        ("subset", f"lon({west}:{east})"),
+        ("subset", f"lat({south}:{north})"),
+    ]
+    payloadB = _get_json(urlB, paramsB)
+    results = _normalize_geojson(payloadB, fallback_param=parameter, limit=limit)
+    if results:
+        return {"source": "nasa-tempo", "results": results}
 
-    # requests no acepta listas en params así que pasamos múltiples subset=
-    # armando la query manualmente:
-    params: Dict[str, Any] = {"datetime": query["datetime"], "format": query["format"], "maxResults": query["maxResults"]}
-    # añadimos subset=... repetido
-    # (requests lo arma si usamos tuplas ("subset", "..."))
-    req_params = [("datetime", params["datetime"]), ("format", params["format"]), ("maxResults", params["maxResults"])]
-    for s in query["subset"]:
-        req_params.append(("subset", s))
+    # Ruta C: pedir NetCDF y muestrear grilla → puntos
+    # Probamos primero la ruta A con NetCDF (sin rangeSubset/accept JSON)
+    paramsNcA: List[Tuple[str, Any]] = [
+        ("datetime", f"{start_iso}/{end_iso}"),
+        ("outputCrs", "EPSG:4326"),
+        ("count", str(limit)),
+        ("subset", f"lon({west}:{east})"),
+        ("subset", f"lat({south}:{north})"),
+        ("rangeSubset", var),
+    ]
+    nc_bytes = _get_netcdf_bytes(urlA, paramsNcA)
+    if not nc_bytes:
+        # Intento ruta B NetCDF
+        paramsNcB: List[Tuple[str, Any]] = [
+            ("datetime", f"{start_iso}/{end_iso}"),
+            ("outputCrs", "EPSG:4326"),
+            ("count", str(limit)),
+            ("subset", f"lon({west}:{east})"),
+            ("subset", f"lat({south}:{north})"),
+        ]
+        nc_bytes = _get_netcdf_bytes(urlB, paramsNcB)
 
-    payload = _request_json(url, params={})  # mandamos vacío y usamos prepared url abajo si quisieras.
-    # NOTA: algunos deployments requieren pasar los params arriba; si tu Harmony ignora
-    # format=application/geo+json, volverá otro tipo y _request_json devolverá vacío.
+    if nc_bytes:
+        try:
+            with xr.open_dataset(io.BytesIO(nc_bytes), engine="h5netcdf") as ds:
+                sampled = _sample_grid_to_points(ds, var, parameter, limit)
+        except Exception as exc:
+            # si falla parseo, devolvemos vacío pero sin romper
+            sampled = []
+    else:
+        sampled = []
 
-    # Intento alternativo: pasar los params en la misma request
-    try:
-        payload = requests.get(url, params=req_params, headers=_headers(), timeout=60).json()
-    except Exception:
-        # si falla parsing/servicio, devolvemos vacío
-        payload = {"features": []}
-
-    results = _normalize_geojson(payload, fallback_param=parameter, limit=limit)
-    return {"source": "nasa-tempo", "results": results}
+    return {"source": "nasa-tempo", "results": sampled}

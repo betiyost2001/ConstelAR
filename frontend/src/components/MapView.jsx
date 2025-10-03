@@ -108,11 +108,12 @@ export default function MapView({
                 "circle-opacity": 0.85,
               },
             });
-            map.setLayoutProperty(LAYER_ID, "visibility", "none");
+            // visible por defecto
++           map.setLayoutProperty(LAYER_ID, "visibility", "visible");
           } else {
             map.getSource(SOURCE_ID).setData(geojson);
             map.setPaintProperty(LAYER_ID, "circle-color", colorExpression("value", pollutant));
-            map.setLayoutProperty(LAYER_ID, "visibility", "none");
+            map.setLayoutProperty(LAYER_ID, "visibility", "visible");
           }
         } catch (e) {
           if (e?.name !== "AbortError") console.error("AQ load error:", e);
