@@ -17,10 +17,7 @@ import {
 } from "@chakra-ui/react";
 import { CloseIcon, HamburgerIcon } from "@chakra-ui/icons";
 
-const NAV = [
-  { href: "/info", label: "Contaminantes" },
-  { href: "/nosotros", label: "Sobre el proyecto" },
-];
+const NAV = [{ href: "/nosotros", label: "Sobre el proyecto" }];
 
 function ContaminantsInfoModalBtn() {
   const { isOpen, onOpen, onClose } = useDisclosure();
@@ -32,9 +29,11 @@ function ContaminantsInfoModalBtn() {
       <Modal isOpen={isOpen} onClose={onClose} size="lg" isCentered>
         <ModalOverlay />
         <ModalContent>
-          <ModalHeader>Contaminantes y por qué importan</ModalHeader>
+          <ModalHeader className="bg-[#07173F] text-2xl fira-sans-bold rounded-t-md">
+            Contaminantes y por qué importan
+          </ModalHeader>
           <ModalCloseButton />
-          <ModalBody>
+          <ModalBody className="bg-[#0042A6] rounded-b-md">
             <Stack spacing={3} fontSize="sm">
               <Text>
                 <b>NO₂</b>: indicador de emisiones del transporte y centrales
@@ -52,7 +51,7 @@ function ContaminantsInfoModalBtn() {
                 <b>HCHO</b>: formaldehído generado por incendios y procesos
                 industriales; precursor de ozono.
               </Text>
-              <Link href="#metodo" color="space.neonYel">
+              <Link href="/mas-info" color="space.neonYel">
                 Leer metodología
               </Link>
             </Stack>

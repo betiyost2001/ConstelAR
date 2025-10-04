@@ -27,7 +27,7 @@ export default function Legend({
   return (
     <div className={`absolute ${posClasses} z-50`}>
       <div
-        className={`p-4 bg-[rgba(7,23,63,0.85)] border border-[rgba(255,255,255,0.10)] rounded-xl min-w-60 transform-gpu transition-transform duration-200 ease-out hover:scale-[1.04] ${originClasses}`}
+        className={`p-4 bg-[rgba(7,23,63,0.85)] border border-[rgba(255,255,255,0.10)] rounded-xl min-w-60 transform-gpu transition-transform duration-200 ease-out hover:scale-[1.50] ${originClasses}`}
       >
         <FilterBar pollutant={selectedPollutant} onChange={onChange} />
         <div className="space-y-2">
