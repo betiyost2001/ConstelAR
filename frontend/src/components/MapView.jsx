@@ -232,9 +232,11 @@ export default function MapView({
   return (
     <div
       ref={divRef}
+      id="map"
       className="map-container spaceapps-bg"
       aria-label="Vista de mapa con mediciones de calidad del aire"
       role="region"
+      tabIndex={-1}
     />
   );
 }

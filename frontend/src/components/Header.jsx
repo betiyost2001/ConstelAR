@@ -2,6 +2,7 @@ import {
   Box, Flex, HStack, IconButton, Link, Stack, useDisclosure, Text, Button,
   Modal, ModalOverlay, ModalContent, ModalHeader, ModalBody, ModalCloseButton
 } from "@chakra-ui/react";
+import { useEffect, useState } from "react";
 import { CloseIcon, HamburgerIcon } from "@chakra-ui/icons";
 
 const NAV = [
@@ -39,6 +40,63 @@ function ContaminantsInfoModalBtn() {
 
 export default function Header() {
   const { isOpen, onOpen, onClose } = useDisclosure();
+  const [activeHash, setActiveHash] = useState(() => {
+    if (typeof window === "undefined") {
+      return "#map";
+    }
+    return window.location.hash || "#map";
+  });
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return undefined;
+    }
+
+    const handleHashChange = () => {
+      setActiveHash(window.location.hash || "#map");
+    };
+
+    window.addEventListener("hashchange", handleHashChange);
+
+    return () => {
+      window.removeEventListener("hashchange", handleHashChange);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined" || typeof IntersectionObserver === "undefined") {
+      return undefined;
+    }
+
+    const sections = NAV.map((item) => document.querySelector(item.href)).filter(Boolean);
+
+    if (!sections.length) {
+      return undefined;
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const visible = entries
+          .filter((entry) => entry.isIntersecting)
+          .sort((a, b) => a.target.offsetTop - b.target.offsetTop);
+
+        if (visible.length > 0) {
+          setActiveHash(`#${visible[0].target.id}`);
+        }
+      },
+      {
+        rootMargin: "-40% 0px -40% 0px",
+        threshold: 0.1,
+      }
+    );
+
+    sections.forEach((section) => observer.observe(section));
+
+    return () => {
+      sections.forEach((section) => observer.unobserve(section));
+      observer.disconnect();
+    };
+  }, []);
   return (
     <Box as="header" position="sticky" top="0" zIndex="docked" bg="transparent" backdropFilter="blur(6px)">
       <Flex className="spaceapps-bg"
@@ -50,11 +108,21 @@ export default function Header() {
         </Text>
 
         <HStack spacing={6} ml={8} display={{ base: "none", md: "flex" }}>
-          {NAV.map((item) => (
-            <Link key={item.href} href={item.href} className="glow-hover" _hover={{ color: "space.neonYel" }}>
-              {item.label}
-            </Link>
-          ))}
+          {NAV.map((item) => {
+            const isActive = item.href === activeHash;
+
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className="glow-hover"
+                color={isActive ? "space.neonYel" : undefined}
+                _hover={{ color: "space.neonYel" }}
+              >
+                {item.label}
+              </Link>
+            );
+          })}
         </HStack>
 
         <Flex ml="auto" align="center" gap={3}>
@@ -73,11 +141,21 @@ export default function Header() {
       {isOpen && (
         <Box bg="rgba(7,23,63,.9)" px={4} pb={4} display={{ md: "none" }}>
           <Stack as="nav" spacing={3} pt={3}>
-            {NAV.map((item) => (
-              <Link key={item.href} href={item.href} onClick={onClose} _hover={{ color: "space.neonYel" }}>
-                {item.label}
-              </Link>
-            ))}
+            {NAV.map((item) => {
+              const isActive = item.href === activeHash;
+
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  onClick={onClose}
+                  color={isActive ? "space.neonYel" : undefined}
+                  _hover={{ color: "space.neonYel" }}
+                >
+                  {item.label}
+                </Link>
+              );
+            })}
           </Stack>
         </Box>
       )}

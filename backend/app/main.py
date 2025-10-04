@@ -1,13 +1,14 @@
 """
 Aplicación principal FastAPI para ConstelAR con arquitectura hexagonal
 """
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from backend.core.config.config import get_settings
-from backend.core.logging import setup_logging
-from backend.core.security.cors_middleware import setup_cors_middleware
-from backend.utils.exceptions.exceptions import ConstelARException, ValidationError, DataSourceError
-from backend.air_quality_monitoring.api.v1.endpoints import router as v1_router
+from core.config.config import get_settings
+from core.logging import setup_logging
+from core.security.cors_middleware import setup_cors_middleware
+from utils.exceptions.exceptions import ConstelARException, ValidationError, DataSourceError
+from air_quality_monitoring.api.v1.endpoints import router as v1_router
 
 # Configurar logging
 logger = setup_logging()

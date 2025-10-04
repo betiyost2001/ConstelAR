@@ -5,6 +5,7 @@
   width: 100%;
   height: calc(100vh - 64px); /* ajustá según alto del header */
   z-index: 0;
+  scroll-margin-top: 80px;
 }
 
 .spaceapps-bg {
