@@ -1,10 +1,11 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/png" href="/pin.png" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-   <meta http-equiv="Content-Security-Policy" content="
+
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/png" href="/pin.png" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
   connect-src http://localhost:8000 http://127.0.0.1:8000 ws://localhost:5173 wss://localhost:5173 https://tile.openstreetmap.org https://basemaps.cartocdn.com https://demotiles.maplibre.org;
   img-src 'self' data: blob: https:;
@@ -12,11 +13,14 @@
   script-src 'self' 'unsafe-eval' blob:;
   worker-src 'self' blob:;
 ">
-    <title>ConstelAR</title>
-  </head>
-  <body>
-    <div id="root"></div>
-    <!-- Vite inyecta este módulo; debe ir DESPUÉS de la CSP -->
-    <script type="module" src="/src/main.jsx"></script>
-  </body>
+  <link href="./src/App.css" rel="stylesheet">
+  <title>ConstelAR</title>
+</head>
+
+<body>
+  <div id="root"></div>
+  <!-- Vite inyecta este módulo; debe ir DESPUÉS de la CSP -->
+  <script type="module" src="/src/main.jsx"></script>
+</body>
+
 </html>
