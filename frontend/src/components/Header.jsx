@@ -24,12 +24,10 @@ function ContaminantsInfoModalBtn() {
           <ModalCloseButton />
           <ModalBody>
             <Stack spacing={3} fontSize="sm">
-              <Text><b>PM2.5</b>: partículas finas que penetran profundamente en los pulmones.</Text>
-              <Text><b>PM10</b>: partículas respirables (polvo, polen).</Text>
-              <Text><b>NO₂</b>: tráfico/combustión; irritación respiratoria.</Text>
-              <Text><b>O₃</b>: ozono troposférico; se forma con sol y precursores.</Text>
-              <Text><b>SO₂</b>: combustibles con azufre; afecta vías respiratorias.</Text>
-              <Text><b>CO</b>: monóxido de carbono; reduce transporte de oxígeno en sangre.</Text>
+              <Text><b>NO₂</b>: indicador de emisiones del transporte y centrales eléctricas; agrava enfermedades respiratorias.</Text>
+              <Text><b>SO₂</b>: proviene de combustibles con azufre y procesos industriales; causa irritación y lluvia ácida.</Text>
+              <Text><b>O₃</b>: ozono troposférico formado por reacciones fotoquímicas; afecta pulmones y cultivos.</Text>
+              <Text><b>HCHO</b>: formaldehído generado por incendios y procesos industriales; precursor de ozono.</Text>
               <Link href="#metodo" color="space.neonYel">Leer metodología</Link>
             </Stack>
           </ModalBody>
