@@ -7,15 +7,12 @@ import App from "./App.jsx";
 import { StyledEngineProvider } from "@mui/material/styles";
 import { ThemeProvider as MUIThemeProvider } from "@mui/material/styles";
 import CssBaseline from "@mui/material/CssBaseline";
-import muiTheme from "./theme/muiTheme";        // <= usa TU tema (JS)
-                                               // si lo tenés .ts, convertí a .js o configura TS
+import muiTheme from "./theme/muiTheme"; // <= usa TU tema (JS)
+// si lo tenés .ts, convertí a .js o configura TS
 
 // Chakra
 import { ChakraProvider } from "@chakra-ui/react";
-import chakraTheme from "./theme/chakraTheme";  // <= usa TU tema (JS)
-
-// Global CSS (gradiente, glow, etc. si lo usás)
-import "./App.css";
+import chakraTheme from "./theme/chakraTheme"; // <= usa TU tema (JS)
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
