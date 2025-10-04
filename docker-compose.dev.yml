@@ -1,27 +1,25 @@
 services:
   api:
     build: ./backend
-    command: python -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    command: python -m uvicorn app.main:app --host 0.0.0.0 --port 8000
     ports:
       - "8000:8000"
-    environment:
-      # ====== CREDENCIALES HARMONY / EARTHDATA ======
-      # Usa tu token real aquí:
-      - EARTHDATA_TOKEN="eyJ0eXAiOiJKV1QiLCJvcmlnaW4iOiJFYXJ0aGRhdGEgTG9naW4iLCJzaWciOiJlZGxqd3RwdWJrZXlfb3BzIiwiYWxnIjoiUlMyNTYifQ.eyJ0eXBlIjoiVXNlciIsInVpZCI6ImJldGluYTIwIiwiZXhwIjoxNzY0NjQ1MjkxLCJpYXQiOjE3NTk0NjEyOTEsImlzcyI6Imh0dHBzOi8vdXJzLmVhcnRoZGF0YS5uYXNhLmdvdiIsImlkZW50aXR5X3Byb3ZpZGVyIjoiZWRsX29wcyIsImFjciI6ImVkbCIsImFzc3VyYW5jZV9sZXZlbCI6M30.N66FZMxuxwBjwncCKvhkIrT-bnMRSRckC9SmESfIdvlcu986b-bIzf0bJPHraF0XqAVtzrapjvZEpf4z7rXogq3Rit6oIf7QmGBkFfGYdKwlmKVIlpPsTFpk5VN2frQfznwN5gxTd3OeTo6uHPMMbeQP9kqGp3cIdPPTS642VIcAgsMQTQKMGz18-9Ci5wpBaQTUEy3dCLdGkBNt-6u_kuiKW1867FG8e__kZc8viYOQcyOdMTOOjc-XcN3cNkquxeoxWjFRQgSi8StF097CVESIDfU9H-lrB8Cnw1I8SVDn_rlz2vJGPkOtRlk-HSAd7W76m9ZPKMovdtp3_6SsUQ"
-      # Opcionales (si cambias dataset/base):
-      # - NASA_TEMPO_BASE_URL=https://harmony.earthdata.nasa.gov/tempo
-      # - NASA_TEMPO_DATASET=tempo_no2_l2_reduced
-    volumes:
-      - ./backend/app:/app/app
-      - ./backend/requirements.txt:/app/requirements.txt:ro
-      - ./backend/.env:/app/.env:ro    
+    # Usa solo env_file para inyectar EARTHDATA_TOKEN y HARMONY_ROOT
     env_file:
       - ./backend/.env
+    # Si necesitas otras vars, ponlas aquí, pero NO vuelvas a declarar EARTHDATA_TOKEN/HARMONY_ROOT
+    environment:
+      - PYTHONUNBUFFERED=1
+    volumes:
+      - ./backend:/app
+      # montar /app/.env no es necesario, puedes quitar esta línea si quieres
+      # - ./backend/.env:/app/.env:ro
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/"]
       interval: 10s
       timeout: 3s
       retries: 5
+      start_period: 20s
 
   web:
     image: node:20-alpine
@@ -30,9 +28,8 @@ services:
     ports:
       - "5173:5173"
     environment:
-      # El front construye URLs como: ${VITE_API_BASE}/${VITE_TEMPO_PATH}/normalized
       - VITE_API_BASE=http://api:8000
-      - VITE_TEMPO_PATH=tempo
+      - VITE_TEMPO_PATH=api/v1/tempo
     volumes:
       - ./frontend:/app
       - /app/node_modules

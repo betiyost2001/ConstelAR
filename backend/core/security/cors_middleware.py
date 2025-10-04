@@ -3,7 +3,7 @@ Middleware CORS para ConstelAR
 """
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from backend.core.config.config import settings
+from core.config.config import settings
 
 
 def setup_cors_middleware(app: FastAPI) -> None:

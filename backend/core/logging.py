@@ -4,7 +4,7 @@ Sistema de logging centralizado para ConstelAR
 import logging
 import sys
 from typing import Optional
-from backend.core.config.config import settings
+from core.config.config import settings
 
 
 def setup_logging(log_level: Optional[str] = None) -> logging.Logger:

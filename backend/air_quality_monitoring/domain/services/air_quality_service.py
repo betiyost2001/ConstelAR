@@ -2,11 +2,11 @@
 Servicio de dominio para calidad del aire
 """
 from typing import Optional, Dict, Any
-from backend.core.logging import get_logger
-from backend.utils.exceptions.exceptions import ValidationError, DataSourceError
-from backend.air_quality_monitoring.domain.models.geo_location import BoundingBox
-from backend.air_quality_monitoring.domain.models.pollutant_data import PollutantType
-from backend.air_quality_monitoring.infrastructure.repositories.nasa_harmony_repository import NasaHarmonyRepository
+from core.logging import get_logger
+from utils.exceptions.exceptions import ValidationError, DataSourceError
+from air_quality_monitoring.domain.models.geo_location import BoundingBox
+from air_quality_monitoring.domain.models.pollutant_data import PollutantType
+from air_quality_monitoring.infrastructure.repositories.nasa_harmony_repository import NasaHarmonyRepository
 
 
 class AirQualityService:

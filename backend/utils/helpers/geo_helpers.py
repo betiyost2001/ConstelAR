@@ -3,7 +3,7 @@ Utilidades para manejo de datos geográficos
 """
 import numpy as np
 from typing import List, Any, Tuple
-from backend.air_quality_monitoring.domain.models.geo_location import GeoLocation, BoundingBox
+from air_quality_monitoring.domain.models.geo_location import GeoLocation, BoundingBox
 
 
 def validate_coordinates(lat: float, lon: float) -> bool:

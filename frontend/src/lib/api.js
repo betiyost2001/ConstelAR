@@ -1,9 +1,12 @@
 // src/lib/api.js
 import { DEFAULT_POLLUTANT } from "../constants/pollutants";
 
-// Path del router (configurable via VITE_TEMPO_PATH, default: "tempo")
-const TEMPO_PATH = ((import.meta.env.VITE_TEMPO_PATH ?? "tempo").trim() || "tempo");
-
+// Path del router (configurable via VITE_TEMPO_PATH, default: "/api/v1/tempo")
+const rawTempoPath = (import.meta.env.VITE_TEMPO_PATH ?? "api/v1/tempo").trim();
+const normalizedTempoPath = rawTempoPath || "api/v1/tempo";
+const TEMPO_PATH = normalizedTempoPath.startsWith("/")
+  ? normalizedTempoPath
+  : `/${normalizedTempoPath}`;
 // Límites por defecto (usados por el Map)
 export const NORTH_AMERICA_BOUNDS = { west: -168, south: 5, east: -52, north: 83 };
 
