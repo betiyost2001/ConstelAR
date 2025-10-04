@@ -17,9 +17,18 @@ export default function Legend({
     "top-left": "top-4 left-4",
   }[position];
 
+  const originClasses = {
+    "bottom-right": "origin-bottom-right",
+    "bottom-left": "origin-bottom-left",
+    "top-right": "origin-top-right",
+    "top-left": "origin-top-left",
+  }[position];
+
   return (
     <div className={`absolute ${posClasses} z-50`}>
-      <div className="p-4 bg-[rgba(7,23,63,0.85)] border border-[rgba(255,255,255,0.10)] rounded-xl min-w-60">
+      <div
+        className={`p-4 bg-[rgba(7,23,63,0.85)] border border-[rgba(255,255,255,0.10)] rounded-xl min-w-60 transform-gpu transition-transform duration-200 ease-out hover:scale-[1.04] ${originClasses}`}
+      >
         <FilterBar pollutant={selectedPollutant} onChange={onChange} />
         <div className="space-y-2">
           {items.map((it, i) => (
