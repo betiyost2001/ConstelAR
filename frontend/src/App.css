@@ -1,3 +1,5 @@
+@import "tailwindcss";
+
 .map-container {
   position: relative;
   width: 100%;
@@ -6,14 +8,14 @@
 }
 
 .spaceapps-bg {
-  background: linear-gradient(45deg, #0042A6 0%, #07173F 100%);
+  background: linear-gradient(45deg, #0042a6 0%, #07173f 100%);
 }
 
 /* Popups y controles legibles */
 .maplibregl-popup-content {
-  background: rgba(7,23,63,.92);
+  background: rgba(7, 23, 63, 0.92);
   color: #fff;
-  border: 1px solid rgba(255,255,255,.08);
+  border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 12px;
 }
 .maplibregl-ctrl {
