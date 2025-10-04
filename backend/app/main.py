@@ -1,11 +1,10 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.api import openaq, tempo  # <- incluye tempo
+from app.api import tempo  # <- incluye tempo
 
 app = FastAPI(title="ArgentinaSpace API")
 
 # Routers
-app.include_router(openaq.router, prefix="/openaq")
 app.include_router(tempo.router,   prefix="/tempo")   # <- este es el que usa el front
 
 # CORS
