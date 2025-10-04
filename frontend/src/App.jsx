@@ -9,10 +9,10 @@ export default function App() {
   const [pollutant, setPollutant] = useState(DEFAULT_POLLUTANT);
 
   return (
-    <div className="app">
+    <div className="app h-screen flex flex-col">
       <Header />
       {/* Contenedor posicionado: filtro + mapa + leyenda */}
-      <div style={{ position: "relative" }}>
+      <div className="flex-1 flex flex-col overflow-hidden relative">
         <FilterBar pollutant={pollutant} onChange={setPollutant} />
         <MapView pollutant={pollutant} />
         <Legend pollutant={pollutant} />

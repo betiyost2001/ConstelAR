@@ -3,7 +3,7 @@
 .map-container {
   position: relative;
   width: 100%;
-  height: calc(100vh - 64px); /* ajustá según alto del header */
+  height: 100%;
   z-index: 0;
 }
 
@@ -28,6 +28,7 @@ body,
 #root {
   height: 100%;
   margin: 0;
+  overflow: hidden;
 }
 * {
   box-sizing: border-box;
