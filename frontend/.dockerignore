@@ -3,3 +3,56 @@ dist
 .git
 .vscode
 .DS_Store
+# VCS / IDE
+.git
+.gitignore
+**/.idea/
+**/.vscode/
+**/.pytest_cache/
+**/.mypy_cache/
+
+# Python
+**/__pycache__/
+**/*.py[cod]
+*.egg-info
+.venv
+venv
+env
+
+# Node/JS (por si hay frontend en el mismo repo)
+**/node_modules/
+**/dist/
+**/build/
+
+# Datos pesados / resultados
+data/
+datasets/
+downloads/
+granules/
+tmp/
+temp/
+logs/
+**/cache/
+**/.cache/
+**/*.nc
+**/*.nc4
+**/*.h5
+**/*.hdf5
+**/*.tif
+**/*.tiff
+**/*.zip
+**/*.tar
+**/*.parquet
+**/*.png
+**/*.jpg
+**/*.jpeg
+
+# Notebooks
+notebooks/
+**/*.ipynb
+
+# Sistemas
+.DS_Store
+Thumbs.db
+desktop.ini
+.env

@@ -14,6 +14,8 @@ import muiTheme from "./theme/muiTheme"; // <= usa TU tema (JS)
 import { ChakraProvider } from "@chakra-ui/react";
 import chakraTheme from "./theme/chakraTheme"; // <= usa TU tema (JS)
 
+import "./index.css";
+
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
     {/* MUI afuera + injectFirst para que su CSS se inyecte primero */}

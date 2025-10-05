@@ -1,89 +1,95 @@
-"""
-Cliente earthaccess (CMR + acceso a datos en la nube)
-"""
-from dataclasses import dataclass
-from typing import List, Tuple, Optional
-import earthaccess as ea
-
-from core.config.config import get_settings
+# backend/air_quality_monitoring/infrastructure/external_apis/earthaccess_client.py
+import os
+from pathlib import Path
+import time
+import shutil
+import earthaccess  # asumiendo que ya lo usás
 from core.logging import get_logger
-from utils.exceptions.exceptions import DataSourceError
 
-logger = get_logger("earthaccess_client")
+log = get_logger("earthaccess_client")
 
+CACHE_DIR = Path(os.getenv("EARTHACCESS_CACHE_DIR", "backend/data/tempo_cache")).resolve()
+CACHE_DIR.mkdir(parents=True, exist_ok=True)
 
-@dataclass
-class SearchResult:
-    granules: list  # objetos de earthaccess.search_data
+MAX_CACHE_GB = float(os.getenv("EARTHACCESS_MAX_CACHE_GB", "2"))  # 2 GB
+MAX_FILE_AGE_H = int(os.getenv("EARTHACCESS_MAX_FILE_AGE_H", "6"))  # 6 horas
 
+def _bytes_to_gb(n): return n / (1024**3)
+
+def _cleanup_cache():
+    # borra por edad
+    now = time.time()
+    for p in CACHE_DIR.rglob("*"):
+        try:
+            if p.is_file():
+                age_h = (now - p.stat().st_mtime) / 3600.0
+                if age_h > MAX_FILE_AGE_H:
+                    p.unlink(missing_ok=True)
+        except Exception:
+            pass
+
+    # borra por tamaño si excede MAX_CACHE_GB
+    total = 0
+    files = []
+    for p in CACHE_DIR.rglob("*"):
+        if p.is_file():
+            s = p.stat().st_size
+            total += s
+            files.append((p, p.stat().st_mtime, s))
+    if _bytes_to_gb(total) > MAX_CACHE_GB:
+        # ordenar por viejo → nuevo y eliminar hasta bajar el umbral
+        files.sort(key=lambda t: t[1])  # mtime asc
+        for p, _, sz in files:
+            try:
+                p.unlink(missing_ok=True)
+                total -= sz
+                if _bytes_to_gb(total) <= MAX_CACHE_GB:
+                    break
+            except Exception:
+                pass
 
 class EarthaccessClient:
-    def __init__(self, token: Optional[str] = None):
-        self.settings = get_settings()
-        # No pasamos 'token=' porque earthaccess >=0.9 no lo admite;
-        # toma EARTHDATA_TOKEN del entorno con strategy="environment".
-        logger.info("earthaccess: intentando login por entorno…")
-        try:
-            ea.login(strategy="environment")
-        except Exception:
-            # fallback interactivo/no netrc: que use auto
-            ea.login()
-        if not getattr(ea.__auth__, "authenticated", False):
-            raise DataSourceError("No se pudo autenticar con Earthdata (EARTHDATA_TOKEN).")
-        logger.info("earthaccess: autenticado correctamente.")
+    def __init__(self):
+        token = os.getenv("EARTHDATA_TOKEN")
+        earthaccess.login(strategy="environment")  # token via ENV
+        log.info("earthaccess: autenticado correctamente.")
+    
+    def search(self, concept_id, temporal, bbox=None, max_items=3):
+        return earthaccess.search_data(
+            concept_id=concept_id,
+            temporal=temporal,
+            bounding_box=bbox,
+            page_size=max_items,
+        )
 
-    def search(
-        self,
-        concept_id: str,
-        temporal: Tuple[str, str],
-        bbox: Optional[Tuple[float, float, float, float]] = None,
-        max_items: int = 3,
-    ) -> SearchResult:
-        """
-        Busca granules en CMR por collection (concept-id), ventana temporal
-        y opcionalmente bbox. Si bbox no trae resultados, reintenta sin bbox.
-        """
-        start_iso, end_iso = temporal
-        logger.info(f"earthaccess.search: coll={concept_id}, time={start_iso}/{end_iso}, bbox={bbox}, max={max_items}")
-        try:
-            # 1er intento: con bbox (si se pasó)
-            if bbox is not None:
-                west, south, east, north = bbox
-                results = ea.search_data(
-                    concept_id=concept_id,
-                    temporal=(start_iso, end_iso),
-                    bounding_box=(west, south, east, north),
-                    count=max_items,
-                )
-                granules = list(results)
-                logger.info(f"earthaccess.search (con bbox) -> {len(granules)}")
-                if granules:
-                    return SearchResult(granules=granules)
+    def download(self, granules):
+        # Descarga SIEMPRE en un solo dir, sin sobreescribir
+        files = earthaccess.download(
+            granules,
+            path=str(CACHE_DIR),
+            overwrite=False,   # no duplica
+        )
 
-            # Fallback: SIN bbox (muchos productos TEMPO devuelven 0 con bbox)
-            results = ea.search_data(
-                concept_id=concept_id,
-                temporal=(start_iso, end_iso),
-                count=max_items,
-            )
-            granules = list(results)
-            logger.info(f"earthaccess.search (sin bbox) -> {len(granules)}")
-            return SearchResult(granules=granules)
-        except Exception as e:
-            raise DataSourceError(f"earthaccess search error: {e}") from e
+        # A veces earthaccess crea subcarpetas; traete todo a plano
+        normalized = []
+        for f in files:
+            pf = Path(f)
+            if pf.is_file() and pf.parent != CACHE_DIR:
+                dst = CACHE_DIR / pf.name
+                try:
+                    if not dst.exists():
+                        shutil.move(str(pf), str(dst))
+                    # limpiar padre vacío
+                    try:
+                        if pf.parent.exists() and not any(pf.parent.iterdir()):
+                            pf.parent.rmdir()
+                    except Exception:
+                        pass
+                    normalized.append(str(dst))
+                except Exception:
+                    normalized.append(str(pf))
+            else:
+                normalized.append(str(pf))
 
-    def download(self, granules: list) -> List[str]:
-        """
-        Descarga los archivos; earthaccess retorna paths locales.
-        """
-        try:
-            if not granules:
-                return []
-            logger.info(f"earthaccess.download: {len(granules)} granules")
-            # 'show_progress' en vez de 'quiet'; provider en mayúsculas
-            paths = ea.download(granules, provider="LARC_CLOUD", show_progress=False)
-            files = [str(p) for p in paths if p is not None]
-            logger.info(f"earthaccess.download -> {len(files)} archivos")
-            return files
-        except Exception as e:
-            raise DataSourceError(f"earthaccess download error: {e}") from e
+        _cleanup_cache()
+        return normalized

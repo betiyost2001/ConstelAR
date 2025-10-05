@@ -1,9 +1,10 @@
 export const TEMPO_POLLUTANTS = [
-  { id: "no2",  apiId: "NO2",  label: "Dióxido de nitrógeno (NO₂)", shortLabel: "NO₂",  unit: "mol/m²" },
-  { id: "so2",  apiId: "SO2",  label: "Dióxido de azufre (SO₂)",   shortLabel: "SO₂",  unit: "mol/m²" },
-  { id: "o3",   apiId: "O3",   label: "Ozono troposférico (O₃)",    shortLabel: "O₃",   unit: "DU"     },
-  { id: "hcho", apiId: "HCHO", label: "Formaldehído (HCHO)",         shortLabel: "HCHO", unit: "mol/m²" },
+  { id: "no2",  apiId: "NO2",  label: "Dióxido de nitrógeno (NO₂)", shortLabel: "NO₂",  unit: "molecules/cm²" },
+  { id: "so2",  apiId: "SO2",  label: "Dióxido de azufre (SO₂)",   shortLabel: "SO₂",  unit: "molecules/cm²" }, // si luego lo usamos
+  { id: "o3",   apiId: "O3",   label: "Ozono troposférico (O₃)",    shortLabel: "O₃",   unit: "DU" },
+  { id: "hcho", apiId: "HCHO", label: "Formaldehído (HCHO)",        shortLabel: "HCHO", unit: "molecules/cm²" },
 ];
+
 
 export const DEFAULT_POLLUTANT = TEMPO_POLLUTANTS[0].id;
 

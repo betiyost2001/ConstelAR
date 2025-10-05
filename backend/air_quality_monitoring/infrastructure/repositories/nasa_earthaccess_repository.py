@@ -222,12 +222,17 @@ class NasaEarthaccessRepository:
                 f"window={start_iso}..{end_iso} limit={limit}"
             )
 
+            max_granules = 1
+            if radius_m and radius_m > 20000:
+                max_granules = 2
+            if radius_m and radius_m > 50000:
+                max_granules = 3
             # 1) buscar + descargar (el cliente ya hace fallback sin bbox si es necesario)
             sr = self.client.search(
                 concept_id=collection_id,
                 temporal=(start_iso, end_iso),
                 bbox=user_bbox,
-                max_items=3,
+                max_items=max_granules,
             )
             files = self.client.download(sr.granules)
             if not files:
