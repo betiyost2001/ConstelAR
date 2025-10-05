@@ -1,108 +1,87 @@
-## 🌌 ContelAR — NASA Space Apps Challenge 2025  
+## 🚀 ConstelAR – Resumen del Proyecto
+** ConstelAR ** es una aplicación web creada para el NASA Space Apps Challenge 2025 que visualiza la calidad del aire en tiempo casi real utilizando datos satelitales de la misión NASA TEMPO (Tropospheric Emissions: Monitoring Pollution).
 
-**ContelAR** es una aplicación web que integra datos satelitales de la misión **TEMPO (Tropospheric Emissions: Monitoring Pollution)** junto con mediciones terrestres y variables meteorológicas, para mostrar en tiempo casi real la **calidad del aire en Norteamérica**.  
+Su objetivo es ofrecer una herramienta accesible para explorar mediciones de contaminantes clave (NO2, SO2, O3, HCHO) sobre Norteamérica, buscando generar alertas tempranas y conciencia pública.
 
-El proyecto busca ofrecer **pronósticos accesibles** y **alertas tempranas** de contaminación, contribuyendo a la **prevención en salud pública** y a la **concientización ciudadana**.  
+# 🌐 Funcionalidades Clave
+Visualización en Mapa: Muestra la calidad del aire por área o por punto geográfico.
+Contaminantes: NO2, SO2, O3 y Formaldehído (HCHO).
 
----
+Backend API (FastAPI): Gestiona la autenticación, descarga de granules TEMPO (vía earthaccess) y normalización de datos.
+Frontend (React/Vite/MapLibre): Interfaz simple para la exploración y visualización coloreada de las mediciones.
 
-## 📍 About the project (English version)  
+# 🛠️ Quick Start (Local Development)
+La opción recomendada es usando Docker Compose.
 
-**ContelAR** is a web application that integrates satellite data from the **TEMPO mission (Tropospheric Emissions: Monitoring Pollution)** together with ground-based measurements and meteorological variables, to display near real-time **air quality information across North America**.  
+Copia variables de entorno:
 
-The project aims to deliver **accessible forecasts** and **early alerts** about air pollution, supporting **public health prevention** and **citizen awareness**.  
+cp backend/.env.example backend/.env
+# (Opcional) Completa EARTHDATA_TOKEN en backend/.env
+Levanta los servicios:
 
-## Run the project (produdction or development)
-- Run the terminal
-- Do `Docker compose up -d --build`
-- Go to localhost:8080 for the frontend
-- Go to localhost:8000 for the backend
 
----
+docker compose -f docker-compose.dev.yml up -d --build
+Frontend: http://localhost:5173
 
-## 📅 Avances entregados – Etapa 1 / Delivered progress – Stage 1  
+Backend Docs: http://localhost:8000/docs
 
-- **Infraestructura / Infrastructure**  
-  - Docker Compose (dev & prod).  
-  - Backend CORS configuration.  
-  - `.env` variables for Vite.  
+💻 Arquitectura y Datos
+Backend: FastAPI + earthaccess (para NASA Earthdata), procesando y sirviendo datos vía el endpoint principal: GET /api/v1/tempo/normalized.
 
-- **Backend (FastAPI)**  
-  - Endpoints `/openaq/normalized` and `/openaq/latest`.  
-  - Swagger enabled at `http://localhost:8000/docs`.  
-  - Adapter for OpenAQ / Open-Meteo data.  
+Frontend: React + Vite + MapLibre, que convierte los datos planos del backend a GeoJSON para colorear el mapa según umbrales de AQI (Air Quality Index).
 
-- **Frontend (React + Vite)**  
-  - Initial setup with Chakra UI + MUI.  
-  - `<MapView>` component with MapLibre and point layers.  
-  - Basic popup with pollutant and value.  
-  - `<Legend>` component with color ranges.  
-  - Pollutant selector in `<Header>`.  
+Rendimiento: El backend implementa cache de granules (TEMPO_CACHE_DIR) y se recomienda restringir las consultas a áreas pequeñas (radius≤30 km) y periodos recientes (∼24−48 h).
 
-- **Funcionalidad clave / Key features**  
-  - Dynamic visualization of air quality by pollutant.  
-  - Cached results to reduce latency.  
+🗺️ Roadmap Futuro
+Implementación de Notificaciones por niveles altos de contaminantes.
 
-- **Documentación / Documentation**  
-  - Initial README with execution steps.  
-  - Notes on CORS and `.env` setup.  
+Integración de Pronósticos y modelos de dispersión.
 
----
+Persistencia de datos históricos en una DB.
 
-## 📅 Avances entregados – Etapa 2 / Delivered progress – Stage 2  
+Mejoras de UX y Accesibilidad.
 
-- **Interacción en el mapa / Map interaction**  
-  - New selection mode: click anywhere on the map to query pollution at that point.  
-  - Dynamic circle replaces static marker.  
+## 🇬🇧 ConstelAR – Project Summary (English)
+** ConstelAR ** is a web application developed for the NASA Space Apps Challenge 2025 that visualizes near real-time air quality using NASA TEMPO mission satellite data (Tropospheric Emissions: Monitoring Pollution).
 
-- **Mejoras en datos / Data improvements**  
-  - Correct pollutant filtering (e.g., O₃ shown as ozone).  
-  - Colors adapted to ranges in `constants/aqi.js`.  
-  - Cached point queries (`fetchAtPoint`) for faster responses.  
+The goal is to provide an accessible tool to explore measurements of key pollutants (NO2, SO2, O3, HCHO) over North America, aiming to generate early alerts and raise public awareness.
 
-- **UI/UX**  
-  - Popup enriched with value, unit, date, and coordinates.  
-  - Removed “stiff” marker that duplicated on viewport move.  
+# 🌐 Key Features
+Map Visualization: Displays air quality by area or specific geographical point.
 
-- **Refactor técnico / Technical refactor**  
-  - Better listener handling to avoid duplicates in HMR.  
-  - Adjustments in `MapView.jsx` and `api.js`.  
-  - Safe style loading (`map.once("idle", ...)`).  
+Pollutants: (NO2, SO2, O3, and Formaldehyde (HCHO).
 
-- **Documentación / Documentation**  
-  - README updated with Stage 2 progress.  
+Backend API (FastAPI): Manages authentication, TEMPO granule downloads (via earthaccess), and data normalization.
 
----
+Frontend (React/Vite/MapLibre): Simple interface for exploration and colored visualization of the measurements.
 
-## 📅 Próximos pasos / Next steps  
+# 🛠️ Quick Start (Local Development)
+The recommended option is using Docker Compose.
 
-- Dashboard with historical pollutant charts.  
-- Basic unit tests in backend and frontend.  
-- Deployment to a cloud service (Render, Railway, or AWS).  
-- Refine UI: responsive design and user experience improvements.  
+Copy environment variables:
 
----
+cp backend/.env.example backend/.env
+# (Optional) Fill in EARTHDATA_TOKEN in backend/.env
+Bring up services:
 
-## 👩‍🚀 Equipo / Team  
+docker compose -f docker-compose.dev.yml up -d --build
+Frontend: http://localhost:5173
 
-We are **ContelAR**, a diverse team of students and professionals passionate about science and technology:  
+Backend Docs: http://localhost:8000/docs
 
-- **Betina Yost** – Ingeniería en Sistemas (Córdoba) | Frontend, coordination, documentation.  
-- **Agustina Fiorella Silva** – Ingeniería en Sistemas (Córdoba) | Backend, APIs.  
-- **Kevin Agustín Ruiz** – Ingeniería en Sistemas (Buenos Aires) | Frontend & Backend.  
-- **Ludmila Gandur** – Physics student | Research and documentation.  
-- **Trinidad Bernardez** – Secondary school student (future astrophysicist) | Research and communication.  
-- **Eduardo Alejandro Ponce Cobos** – Systems Engineer, Backend developer (10+ years experience).  
+💻 Architecture and Data
+Backend: FastAPI + earthaccess (for NASA Earthdata), processing and serving data via the main endpoint: GET /api/v1/tempo/normalized.
 
-This combination of **academic diversity**, **professional expertise**, and **motivation to learn** allows us to approach the challenge from multiple perspectives, balancing technical rigor with creativity and innovation.  
+Frontend: React + Vite + MapLibre, converting flat backend data to GeoJSON for coloring the map based on AQI (Air Quality Index) thresholds.
 
----
+Performance: The backend implements granule caching (TEMPO_CACHE_DIR), and it's recommended to restrict queries to small areas (radius≤30 km) and recent periods (∼24−48 h).
 
-## 🛠️ Tecnologías y herramientas / Tech & Tools  
+# 🗺️ Future Roadmap
+Implementation of Notifications for high pollutant levels.
 
-**Frontend**: React + Vite, Chakra UI/MUI, MapLibre GL, PWA  
-**Backend**: FastAPI, xarray/dask, SQLite, Tippecanoe  
-**Data**: NASA TEMPO (EarthData, Harmony, CMR), AirNow, OpenAQ, HRRR/GFS  
+Integration of Forecasts and dispersion models.
+Persistence of historical data in a DB.
+UX and Accessibility improvements.
 **Infraestructura / Infra**: Docker, Google Cloud Run / AWS ECS, GitHub Actions  
 **Colaboración / Collaboration**: GitHub, Trello, Google Drive, Figma  
 
