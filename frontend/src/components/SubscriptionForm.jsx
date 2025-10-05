@@ -1,22 +1,16 @@
 import React, { useState, useEffect, useRef } from "react";
-import {
-  fetchUSRegions,
-  fetchStatesInRegion,
-  searchCitiesInState,
-} from "../lib/citiesApi";
+import { searchCitiesInState } from "../lib/citiesApi";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faBell } from "@fortawesome/free-solid-svg-icons";
 
 export default function SubscriptionForm() {
   const [formData, setFormData] = useState({
     email: "",
     phone: "",
-    region: "",
-    state: "",
     city: "",
   });
 
   const [errors, setErrors] = useState({});
-  const [regions, setRegions] = useState([]);
-  const [states, setStates] = useState([]);
   const [cities, setCities] = useState([]);
   const [loading, setLoading] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
@@ -24,49 +18,8 @@ export default function SubscriptionForm() {
   const cityCacheRef = useRef(new Map());
   const searchDebounceRef = useRef(null);
 
-  // Load regions on mount
+  // Debounced city search
   useEffect(() => {
-    const loadRegions = async () => {
-      setLoading(true);
-      const data = await fetchUSRegions();
-      setRegions(data);
-      setLoading(false);
-    };
-    loadRegions();
-  }, []);
-
-  // Load states when region changes
-  useEffect(() => {
-    if (formData.region) {
-      const loadStates = async () => {
-        setLoading(true);
-        const data = await fetchStatesInRegion(formData.region);
-        setStates(data);
-        setFormData((prev) => ({ ...prev, state: "", city: "" }));
-        setCities([]);
-        setLoading(false);
-      };
-      loadStates();
-    } else {
-      setStates([]);
-      setCities([]);
-    }
-  }, [formData.region]);
-
-  // Reset city list when state changes; do not prefetch to avoid rate limits
-  useEffect(() => {
-    setCities([]);
-    setFormData((prev) => ({ ...prev, city: "" }));
-    setCityApiError("");
-  }, [formData.state]);
-
-  // Debounced city search within selected state
-  useEffect(() => {
-    if (!formData.state) {
-      setCities([]);
-      setCityApiError("");
-      return;
-    }
     const q = (formData.city || "").trim();
     if (q.length < 2) {
       setCities([]);
@@ -80,7 +33,7 @@ export default function SubscriptionForm() {
     }
     searchDebounceRef.current = setTimeout(async () => {
       try {
-        const cacheKey = `${formData.state}:${q.toLowerCase()}`;
+        const cacheKey = `all:${q.toLowerCase()}`;
         const cache = cityCacheRef.current.get(cacheKey);
         if (cache) {
           setCities(cache);
@@ -88,13 +41,14 @@ export default function SubscriptionForm() {
           return;
         }
         setLoading(true);
-        const results = await searchCitiesInState(formData.state, q, 10);
+        // Search cities in all US states
+        const results = await searchCitiesInState("US", q, 10);
         const list = Array.isArray(results) ? results : [];
         setCities(list);
         cityCacheRef.current.set(cacheKey, list);
         if (list.length === 0) {
           setCityApiError(
-            `No se encontraron ciudades que coincidan con "${q}" en el estado seleccionado.`
+            `No se encontraron ciudades que coincidan con "${q}".`
           );
         } else {
           setCityApiError("");
@@ -114,7 +68,7 @@ export default function SubscriptionForm() {
         clearTimeout(searchDebounceRef.current);
       }
     };
-  }, [formData.state, formData.city]);
+  }, [formData.city]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -143,12 +97,6 @@ export default function SubscriptionForm() {
     if (!formData.phone || !validatePhone(formData.phone)) {
       newErrors.phone = "Número de teléfono inválido (mínimo 10 dígitos)";
     }
-    if (!formData.region) {
-      newErrors.region = "Selecciona una región";
-    }
-    if (!formData.state) {
-      newErrors.state = "Selecciona un estado";
-    }
     if (!formData.city) {
       newErrors.city = "Selecciona una ciudad";
     }
@@ -165,8 +113,6 @@ export default function SubscriptionForm() {
       setFormData({
         email: "",
         phone: "",
-        region: "",
-        state: "",
         city: "",
       });
       setErrors({});
@@ -217,36 +163,6 @@ export default function SubscriptionForm() {
           )}
         </div>
 
-        {/* Region */}
-        <div className="text-black">
-          <label htmlFor="region" className="block text-white  md:text-lg mb-3">
-            Región
-          </label>
-          <div className="w-full px-4 py-3 bg-white text-[#07173F] border-0 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500">
-            <select
-              id="region"
-              name="region"
-              value={formData.region}
-              onChange={handleInputChange}
-              required
-            >
-              <option value="">Selecciona una región</option>
-              {regions.map((region, idx) => (
-                <option
-                  key={region.code || region.wikiDataId || region.name || idx}
-                  value={region.code}
-                >
-                  {region.name}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {errors.region && (
-            <p className="text-red-500 text-sm mt-1">{errors.region}</p>
-          )}
-        </div>
-
         {/* Phone */}
         <div className="text-black">
           <label htmlFor="phone" className="block text-white  md:text-lg mb-3">
@@ -269,39 +185,10 @@ export default function SubscriptionForm() {
           )}
         </div>
 
-        {/* State */}
-        <div className="text-black">
-          <label htmlFor="state" className="block text-white  md:text-lg mb-3">
-            Estado
-          </label>
-          <div className="w-full px-4 py-3 bg-white text-[#07173F] border-0 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50">
-            <select
-              id="state"
-              name="state"
-              value={formData.state}
-              onChange={handleInputChange}
-              disabled={!formData.region || loading}
-              required
-            >
-              <option value="">Selecciona un estado</option>
-              {states.map((state, idx) => (
-                <option
-                  key={state.code || state.wikiDataId || state.name || idx}
-                  value={state.code}
-                >
-                  {state.name}
-                </option>
-              ))}
-            </select>
-          </div>
-          {errors.state && (
-            <p className="text-red-500 text-sm mt-1">{errors.state}</p>
-          )}
-        </div>
-
         {/* Submit Button (left column) */}
         <div className="md:col-start-1">
-          <div className="w-full px-6 py-4  rounded-xl text-center bg-[#EAFE07] hover:bg-[#D4E600] cursor-pointer text-black transition-colors duration-200 text-3xl">
+          <div className="w-full px-6 py-4  rounded-xl text-center bg-[#EAFE07] hover:bg-[#D4E600] cursor-pointer text-black transition-colors duration-200 text-3xl flex items-center justify-center gap-3">
+            <FontAwesomeIcon icon={faBell} />
             <button type="submit">Recibir</button>
           </div>
 
@@ -310,7 +197,7 @@ export default function SubscriptionForm() {
           )}
         </div>
 
-        {/* City (right column under State) */}
+        {/* City */}
         <div className="text-black">
           <label htmlFor="city" className="block text-white  md:text-lg mb-3">
             Ciudad
@@ -324,7 +211,7 @@ export default function SubscriptionForm() {
               onChange={handleInputChange}
               list="cities-list"
               placeholder="Selecciona una ciudad"
-              disabled={!formData.state || loading}
+              disabled={loading}
               required
             />
           </div>

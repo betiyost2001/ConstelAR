@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import {
@@ -13,6 +13,8 @@ import {
   getPollutantLabel,
   getPollutantUnit,
 } from "../constants/pollutants";
+import FloatingNotificationButton from "./FloatingNotificationButton";
+import SubscriptionModal from "./SubscriptionModal";
 
 function debounce(fn, ms) {
   let t;
@@ -47,6 +49,7 @@ export default function MapView({
   const abortRef = useRef(null);
   const clickHandlerRef = useRef(null);
   const resizeObsRef = useRef(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   useLayoutEffect(() => {
     let raf;
@@ -299,12 +302,23 @@ export default function MapView({
   }, [pollutant]);
 
   return (
-    <div
-      ref={divRef}
-      className="map-container spaceapps-bg"
-      aria-label="Vista de mapa con mediciones de calidad del aire"
-      role="region"
-    />
+    <>
+      <div
+        ref={divRef}
+        className="map-container spaceapps-bg"
+        aria-label="Vista de mapa con mediciones de calidad del aire"
+        role="region"
+      />
+
+      {/* Botón flotante de notificaciones */}
+      <FloatingNotificationButton onOpenModal={() => setIsModalOpen(true)} />
+
+      {/* Modal de suscripción */}
+      <SubscriptionModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+      />
+    </>
   );
 }
 
