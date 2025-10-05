@@ -5,54 +5,41 @@ import os
 from typing import Optional
 from pydantic_settings import BaseSettings
 
-
 class Settings(BaseSettings):
-    """Configuración de la aplicación"""
-    
-    # Configuración de la aplicación
     app_name: str = "ArgentinaSpace API"
     app_version: str = "1.0.0"
     debug: bool = False
-    
-    # Configuración de NASA TEMPO
+
+    # Credencial NASA
     harmony_root: str = "https://harmony.earthdata.nasa.gov"
-    earthdata_token: Optional[str] = None
-    
-    # Colecciones TEMPO
-    tempo_collection_no2: str = "C2930725014-LARC_CLOUD"
-    tempo_collection_so2: str = "C2930725337-LARC_CLOUD"
-    tempo_collection_o3: str = "C2930725020-LARC_CLOUD"
-    tempo_collection_hcho: str = "C2930725347-LARC_CLOUD"
-    
-    # Variables TEMPO
-    tempo_var_no2: str = "nitrogendioxide_tropospheric_column"
-    tempo_var_so2: str = "sulfurdioxide_total_column"
-    tempo_var_o3: str = "ozone_total_column"
-    tempo_var_hcho: str = "formaldehyde_tropospheric_column"
-    
-    # Configuración de CORS
+    earthdata_token: Optional[str] = None  # EARTHDATA_TOKEN del .env
+
+    # Colecciones TEMPO (pisables por .env)
+    tempo_collection_no2: str = os.getenv("TEMPO_COLLECTION_NO2", "C3685896708-LARC_CLOUD")
+    tempo_collection_so2: str = os.getenv("TEMPO_COLLECTION_SO2", "C3685896826-LARC_CLOUD")
+    tempo_collection_o3:  str = os.getenv("TEMPO_COLLECTION_O3",  "C3685896625-LARC_CLOUD")
+    tempo_collection_hcho:str = os.getenv("TEMPO_COLLECTION_HCHO","C3685897141-LARC_CLOUD")
+
+    # Variables TEMPO (en product/*)
+    tempo_var_no2:  str = os.getenv("TEMPO_VAR_NO2",  "product/vertical_column_troposphere")
+    tempo_var_so2:  str = os.getenv("TEMPO_VAR_SO2",  "product/column_amount_so2")
+    tempo_var_o3:   str = os.getenv("TEMPO_VAR_O3",   "product/column_amount_o3")
+    tempo_var_hcho: str = os.getenv("TEMPO_VAR_HCHO", "product/vertical_column")
+
     cors_origins: list = [
-        "http://localhost:5173",
-        "http://127.0.0.1:5173",
-        "http://localhost:4173",
-        "http://127.0.0.1:4173",
-        "http://localhost:8080",
-        "http://127.0.0.1:8080",
+        "http://localhost:5173","http://127.0.0.1:5173",
+        "http://localhost:4173","http://127.0.0.1:4173",
+        "http://localhost:8080","http://127.0.0.1:8080",
     ]
-    
-    # Configuración de logging
+
     log_level: str = "INFO"
-    
+
     class Config:
         env_file = ".env"
         case_sensitive = False
-        extra = "ignore"  # Ignorar variables extra no definidas
+        extra = "ignore"
 
-
-# Instancia global de configuración
 settings = Settings()
 
-
 def get_settings() -> Settings:
-    """Obtener configuración de la aplicación"""
     return settings
