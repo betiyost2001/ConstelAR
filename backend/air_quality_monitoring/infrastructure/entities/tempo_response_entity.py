@@ -1,6 +1,3 @@
-"""
-Entidades de infraestructura para respuestas de NASA TEMPO
-"""
 from dataclasses import dataclass
 from typing import Any, Dict, List
 

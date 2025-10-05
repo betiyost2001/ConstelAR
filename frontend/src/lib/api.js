@@ -6,13 +6,20 @@ const AVOGADRO = 6.02214076e23;
 const MOL_PER_M2_PER_MOLEC_CM2 = 1e4 / AVOGADRO; // ≈ 1.66054e-20
 
 function normalizeValueAndUnit(parameter, value, unit) {
-  const p = String(parameter || "").toLowerCase();
-  if (unit === "molecules/cm^2" && (p === "no2" || p === "so2" || p === "hcho")) {
-    return { value: value * MOL_PER_M2_PER_MOLEC_CM2, unit: "mol/m²" };
-  }
-  return { value, unit }; // O3 en DU ya está bien
-}
+ // **SOLUCIÓN: Deshabilitar la conversión para TEMPO**
+ // Para que los valores (ej: 2e15) coincidan con la escala de colores,
+ // simplemente devolvemos el valor original (molecules/cm^2).
+ 
+ const p = String(parameter || "").toLowerCase();
+ 
+ // NO HACER NADA si la unidad es molecules/cm^2 para TEMPO
+ if (unit === "molecules/cm^2" && (p === "no2" || p === "so2" || p === "hcho")) {
+   return { value, unit }; // Devolver el valor original.
+ }
 
+ // Para otros contaminantes (como Ozono en DU), o si se añade otra fuente:
+ return { value, unit }; 
+}
 // Path del router (configurable via VITE_TEMPO_PATH, default: "tempo")
 const TEMPO_PATH = (import.meta.env.VITE_TEMPO_PATH ?? "tempo").trim() || "tempo";
 

@@ -1,24 +1,30 @@
-# backend/air_quality_monitoring/infrastructure/external_apis/earthaccess_client.py
 import os
 from pathlib import Path
 import time
 import shutil
-import earthaccess  # asumiendo que ya lo usás
-from core.logging import get_logger
+import earthaccess
+from typing import Any, Dict
+
+# -------------------------------------------------------------------
+# ⬇️ TUS IMPORTACIONES REALES ⬇️
+from core.logging import get_logger 
+from core.config.config import get_settings, Settings 
+# -------------------------------------------------------------------
 
 log = get_logger("earthaccess_client")
 
-CACHE_DIR = Path(os.getenv("EARTHACCESS_CACHE_DIR", "backend/data/tempo_cache")).resolve()
+# Usar la variable de entorno EARTHACCESS_CACHE definida en docker-compose
+CACHE_DIR = Path(os.getenv("EARTHACCESS_CACHE", "/tmp/tempo-cache")).resolve()
 CACHE_DIR.mkdir(parents=True, exist_ok=True)
 
-MAX_CACHE_GB = float(os.getenv("EARTHACCESS_MAX_CACHE_GB", "2"))  # 2 GB
-MAX_FILE_AGE_H = int(os.getenv("EARTHACCESS_MAX_FILE_AGE_H", "6"))  # 6 horas
-
+# Variables de limpieza de caché (usa los valores de tu .env)
+MAX_CACHE_GB = float(os.getenv("EARTHACCESS_MAX_CACHE_GB", "2"))
+MAX_FILE_AGE_H = int(os.getenv("EARTHACCESS_MAX_FILE_AGE_H", "6"))
 def _bytes_to_gb(n): return n / (1024**3)
 
 def _cleanup_cache():
-    # borra por edad
     now = time.time()
+    # Limpieza por edad
     for p in CACHE_DIR.rglob("*"):
         try:
             if p.is_file():
@@ -28,7 +34,7 @@ def _cleanup_cache():
         except Exception:
             pass
 
-    # borra por tamaño si excede MAX_CACHE_GB
+    # Limpieza por tamaño total
     total = 0
     files = []
     for p in CACHE_DIR.rglob("*"):
@@ -36,9 +42,10 @@ def _cleanup_cache():
             s = p.stat().st_size
             total += s
             files.append((p, p.stat().st_mtime, s))
+            
     if _bytes_to_gb(total) > MAX_CACHE_GB:
-        # ordenar por viejo → nuevo y eliminar hasta bajar el umbral
-        files.sort(key=lambda t: t[1])  # mtime asc
+        log.info(f"Cache size exceeded ({_bytes_to_gb(total):.2f} GB > {MAX_CACHE_GB} GB). Cleaning up.")
+        files.sort(key=lambda t: t[1]) 
         for p, _, sz in files:
             try:
                 p.unlink(missing_ok=True)
@@ -47,30 +54,57 @@ def _cleanup_cache():
                     break
             except Exception:
                 pass
+        log.info(f"Cache cleaned. Remaining size: {_bytes_to_gb(total):.2f} GB")
+
 
 class EarthaccessClient:
-    def __init__(self):
-        token = os.getenv("EARTHDATA_TOKEN")
-        earthaccess.login(strategy="environment")  # token via ENV
-        log.info("earthaccess: autenticado correctamente.")
-    
-    def search(self, concept_id, temporal, bbox=None, max_items=3):
-        return earthaccess.search_data(
-            concept_id=concept_id,
-            temporal=temporal,
-            bounding_box=bbox,
-            page_size=max_items,
-        )
+    """Cliente wrapper para la librería earthaccess."""
+
+    def __init__(self, settings: Settings | None = None):
+        self.settings: Settings = settings or get_settings()
+        self.cache_dir = CACHE_DIR
+        
+        # 🔐 Login con token si está disponible
+        token = self.settings.earthdata_token
+        if token:
+            try:
+                earthaccess.login(strategy="environment", token=token)
+                log.info("Earthaccess login exitoso con token de entorno.")
+            except Exception as e:
+                 log.error(f"Earthaccess login falló con token: {e}", exc_info=True)
+                 earthaccess.login() 
+        else:
+            log.warning("EARTHDATA_TOKEN no encontrado en settings. Intentando login automático.")
+            earthaccess.login()
+            
+    # -------------------------------------------------------------------
+    # 🎯 FUNCIÓN CORREGIDA (SOLUCIONA EL ERROR DE INDENTACIÓN Y EL DE "limit")
+    # -------------------------------------------------------------------
+
+    def search(self, **kwargs) -> Any:
+        
+        search_kwargs: Dict[str, Any] = kwargs.copy()
+        
+        # 1. Limpieza de claves problemáticas por si acaso.
+        if 'limit' in search_kwargs:
+            search_kwargs.pop('limit') 
+        if 'max_items' in search_kwargs:
+            search_kwargs.pop('max_items')
+        if 'page_size' in search_kwargs:
+            search_kwargs.pop('page_size')
+        return earthaccess.search_data(**search_kwargs)
+
+    # -------------------------------------------------------------------
+    # ⬇️ FUNCIÓN DOWNLOAD CORREGIDA (SOLO LA INDENTACIÓN) ⬇️
+    # -------------------------------------------------------------------
 
     def download(self, granules):
-        # Descarga SIEMPRE en un solo dir, sin sobreescribir
         files = earthaccess.download(
             granules,
-            path=str(CACHE_DIR),
-            overwrite=False,   # no duplica
+            local_path=str(CACHE_DIR),
+            overwrite=False,
         )
 
-        # A veces earthaccess crea subcarpetas; traete todo a plano
         normalized = []
         for f in files:
             pf = Path(f)
@@ -79,13 +113,12 @@ class EarthaccessClient:
                 try:
                     if not dst.exists():
                         shutil.move(str(pf), str(dst))
-                    # limpiar padre vacío
+                    normalized.append(str(dst))
                     try:
                         if pf.parent.exists() and not any(pf.parent.iterdir()):
                             pf.parent.rmdir()
                     except Exception:
                         pass
-                    normalized.append(str(dst))
                 except Exception:
                     normalized.append(str(pf))
             else:
