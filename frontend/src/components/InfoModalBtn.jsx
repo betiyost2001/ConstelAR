@@ -1,4 +1,5 @@
 import React from "react";
+import { Link as RouterLink } from "react-router-dom";
 import {
   Link,
   Stack,
@@ -45,7 +46,7 @@ export default function InfoModalBtn() {
                 <b>HCHO</b>: formaldehído generado por incendios y procesos
                 industriales; precursor de ozono.
               </Text>
-              <Link href="/mas-info" color="space.neonYel">
+              <Link as={RouterLink} to="/contaminantes" color="space.neonYel" onClick={onClose}>
                 Leer metodología
               </Link>
             </Stack>

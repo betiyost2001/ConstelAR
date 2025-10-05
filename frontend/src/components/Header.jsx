@@ -1,32 +1,20 @@
 import {
-  Box,
-  Flex,
-  HStack,
-  IconButton,
-  Link,
-  Stack,
-  useDisclosure,
-  Text,
+  Box, Flex, HStack, IconButton, Link, Stack, useDisclosure, Text,
 } from "@chakra-ui/react";
+import { Link as RouterLink } from "react-router-dom";
 import { CloseIcon, HamburgerIcon } from "@chakra-ui/icons";
 import InfoModalBtn from "./InfoModalBtn";
 
 const NAV = [
   { href: "/", label: "Mapa" },
-  { href: "/nosotros", label: "Sobre el proyecto" },
+  { href: "/contaminantes", label: "¿Qué mide cada contaminante?" },
+  { href: "/proyecto", label: "Sobre el proyecto" },
 ];
 
 export default function Header() {
   const { isOpen, onOpen, onClose } = useDisclosure();
   return (
-    <Box
-      as="header"
-      position="sticky"
-      top="0"
-      zIndex="docked"
-      bg="transparent"
-      backdropFilter="blur(6px)"
-    >
+    <Box as="header" position="sticky" top="0" zIndex="docked" bg="transparent" backdropFilter="blur(6px)">
       <Flex
         className="spaceapps-bg"
         px={{ base: 4, md: 8 }}
@@ -35,16 +23,16 @@ export default function Header() {
         borderBottom="1px solid"
         borderColor="rgba(255,255,255,.08)"
       >
-        {/* Brand */}
-        <Text as="a" href="/" className="fira-sans-bold text-2xl md:text-3xl">
+        <Text as={RouterLink} to="/" className="fira-sans-bold text-2xl md:text-3xl">
           ConstelAR
         </Text>
 
         <HStack spacing={6} ml={8} display={{ base: "none", md: "flex" }}>
           {NAV.map((item) => (
             <Link
+              as={RouterLink}
               key={item.href}
-              href={item.href}
+              to={item.href}
               className="glow-hover"
               _hover={{ color: "space.neonYel" }}
             >
@@ -65,14 +53,14 @@ export default function Header() {
         </Flex>
       </Flex>
 
-      {/* Menú mobile */}
       {isOpen && (
         <Box bg="rgba(7,23,63,.9)" px={4} pb={4} display={{ md: "none" }}>
           <Stack as="nav" spacing={3} pt={3}>
             {NAV.map((item) => (
               <Link
+                as={RouterLink}
                 key={item.href}
-                href={item.href}
+                to={item.href}
                 onClick={onClose}
                 _hover={{ color: "space.neonYel" }}
               >
