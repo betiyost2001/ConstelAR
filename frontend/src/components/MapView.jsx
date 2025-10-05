@@ -1,344 +1,337 @@
 import { useLayoutEffect, useRef, useState } from "react";
-import maplibregl, { Padding } from "maplibre-gl";
-import 'maplibre-gl/dist/maplibre-gl.css';import {
-  fetchMeasurements,
-  bboxFromMap,
-  fetchAtPoint,
-  NORTH_AMERICA_BOUNDS,
+import maplibregl from "maplibre-gl";
+import "maplibre-gl/dist/maplibre-gl.css";
+
+import {
+  fetchMeasurements,
+  bboxFromMap,
+  fetchAtPoint,
+  NORTH_AMERICA_BOUNDS,
 } from "../lib/api";
 import { colorExpression } from "../constants/aqi";
 import {
-  DEFAULT_POLLUTANT,
-  getPollutantLabel,
-  getPollutantUnit,
+  DEFAULT_POLLUTANT,
+  getPollutantLabel,
+  getPollutantUnit,
 } from "../constants/pollutants";
 import FloatingNotificationButton from "./FloatingNotificationButton";
 import SubscriptionModal from "./SubscriptionModal";
 
+// util: debounce simple
 function debounce(fn, ms) {
-  let t;
-  return (...args) => {
-    clearTimeout(t);
-    t = setTimeout(() => fn(...args), ms);
-  };
+  let t;
+  return (...args) => {
+    clearTimeout(t);
+    t = setTimeout(() => fn(...args), ms);
+  };
 }
 
-/**
- * Props:
- * - pollutant?: contaminante soportado por TEMPO
- * - fetcher?: ({bbox, pollutant, signal}) => GeoJSON
- * - center?: [lng, lat]
- * - zoom?: number
- */
 const DEFAULT_CENTER = [-99, 37];
 const DEFAULT_ZOOM = 3.5;
 const MAX_BOUNDS = [
-  [NORTH_AMERICA_BOUNDS.west, NORTH_AMERICA_BOUNDS.south],
-  [NORTH_AMERICA_BOUNDS.east, NORTH_AMERICA_BOUNDS.north],
+  [NORTH_AMERICA_BOUNDS.west, NORTH_AMERICA_BOUNDS.south],
+  [NORTH_AMERICA_BOUNDS.east, NORTH_AMERICA_BOUNDS.north],
 ];
 
 export default function MapView({
-  pollutant = DEFAULT_POLLUTANT,
-  fetcher = fetchMeasurements,
-  center = DEFAULT_CENTER,
-  zoom = DEFAULT_ZOOM,
+  pollutant = DEFAULT_POLLUTANT,
+  fetcher = fetchMeasurements,
+  center = DEFAULT_CENTER,
+  zoom = DEFAULT_ZOOM,
 }) {
-  const mapRef = useRef(null);
-  const divRef = useRef(null);
-  const abortRef = useRef(null);
-  const clickHandlerRef = useRef(null);
-  const resizeObsRef = useRef(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const mapRef = useRef(null);
+  const divRef = useRef(null);
+  const abortRef = useRef(null);
+  const clickHandlerRef = useRef(null);
+  const resizeObsRef = useRef(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
-  useLayoutEffect(() => {
-    let raf;
+  // Mapa y capas
+  useLayoutEffect(() => {
+    let raf;
 
-    const init = () => {
-      const el = divRef.current;
-      if (!el) {
-        raf = requestAnimationFrame(init);
-        return;
-      }
-      if (mapRef.current || el.__maplibre_initialized) return;
-      el.__maplibre_initialized = true;
+    const init = () => {
+      const el = divRef.current;
+      if (!el) {
+        raf = requestAnimationFrame(init);
+        return;
+      }
+      if (mapRef.current || el.__maplibre_initialized) return;
+      el.__maplibre_initialized = true;
 
-      const rasterStyle = {
-        version: 8,
-        sources: {
-          osm: {
-            type: "raster",
-            tiles: ["https://tile.openstreetmap.org/{z}/{x}/{y}.png"],
-            tileSize: 256,
-            attribution:
-              '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>',
-          },
-        },
-        layers: [{ id: "osm", type: "raster", source: "osm" }],
-      };
+      const rasterStyle = {
+        version: 8,
+        sources: {
+          osm: {
+            type: "raster",
+            tiles: ["https://tile.openstreetmap.org/{z}/{x}/{y}.png"],
+            tileSize: 256,
+            attribution:
+              '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>',
+          },
+        },
+        layers: [{ id: "osm", type: "raster", source: "osm" }],
+      };
 
-      const map = new maplibregl.Map({
-        container: el,
-        style: rasterStyle,
-        center,
-        zoom,
-        maxBounds: MAX_BOUNDS,
-        attributionControl: false,
-        pixelRatio: Math.max(1, Math.min(window.devicePixelRatio || 1, 2)),
-        failIfMajorPerformanceCaveat: false,
-      });
-      mapRef.current = map;
+      const map = new maplibregl.Map({
+        container: el,
+        style: rasterStyle,
+        center,
+        zoom,
+        maxBounds: MAX_BOUNDS,
+        attributionControl: false,
+        pixelRatio: Math.max(1, Math.min(window.devicePixelRatio || 1, 2)),
+        failIfMajorPerformanceCaveat: false,
+      });
+      mapRef.current = map;
 
-      map.addControl(
-        new maplibregl.NavigationControl({ visualizePitch: true }),
-        "top-right"
-      );
-      map.addControl(
-        new maplibregl.AttributionControl({ compact: true }),
-        "bottom-right"
-      );
+      map.addControl(
+        new maplibregl.NavigationControl({ visualizePitch: true }),
+        "top-right"
+      );
+      map.addControl(
+        new maplibregl.AttributionControl({ compact: true }),
+        "bottom-right"
+      );
 
-      const SOURCE_ID = "aq-points";
-      const LAYER_ID = "aq-circles";
-      const SEL_SOURCE = "selected-point";
-      const SEL_LAYER = "selected-circle";
+      const SOURCE_ID = "aq-points";
+      const LAYER_ID = "aq-circles";
+      const SEL_SOURCE = "selected-point";
+      const SEL_LAYER = "selected-circle";
 
-      async function loadForCurrentView() {
-        abortRef.current?.abort();
-        const controller = new AbortController();
-        abortRef.current = controller;
+      async function loadForCurrentView() {
+        abortRef.current?.abort();
+        const controller = new AbortController();
+        abortRef.current = controller;
 
-        try {
-          const bbox = bboxFromMap(map);
-          const geojson = await fetcher({
-            bbox,
-            pollutant,
-            signal: controller.signal,
-          });
+        try {
+          const bbox = bboxFromMap(map);
+          const geojson = await fetcher({
+            bbox,
+            pollutant,
+            signal: controller.signal,
+          });
 
-          if (!map.getSource(SOURCE_ID)) {
-            map.addSource(SOURCE_ID, { type: "geojson", data: geojson });
-            map.addLayer({
-              id: LAYER_ID,
-              type: "circle",
-              source: SOURCE_ID,
-              paint: {
-                // CORRECCIÓN CLAVE: Usar 'case' con 'has' para manejar valores null/ausentes.
-                "circle-color": [
-                   "case",
-                   ["has", "value"], // ¿Tiene la propiedad 'value'?
-                   colorExpression("value", pollutant), // Si sí, usa la expresión de color.
-                   "#CCCCCC" // Si no, color gris (por defecto) para que el punto no desaparezca.
-                ],
-                "circle-radius": [
-                  "interpolate",
-                  ["linear"],
-                  ["zoom"],
-                  3,
-                  3,
-                  8,
-                  6,
-                  12,
-                  9,
-                ],
-                "circle-opacity": 0.85,
-              },
-            });
-            // visible por defecto
-            map.setLayoutProperty(LAYER_ID, "visibility", "visible");
-          } else {
-            map.getSource(SOURCE_ID).setData(geojson);
-            
-            // Actualizar la expresión de color en la capa existente
-            map.setPaintProperty(
-              LAYER_ID,
-              "circle-color",
-              // Usamos la misma lógica de 'case' para la actualización
-              [
-                "case",
-                ["has", "value"],
-                colorExpression("value", pollutant),
-                "#CCCCCC" 
-              ]
-            );
-            map.setLayoutProperty(LAYER_ID, "visibility", "visible");
-          }
-        } catch (e) {
-          if (e?.name !== "AbortError") console.error("AQ load error:", e);
-        }
-      }
+          if (!map.getSource(SOURCE_ID)) {
+            map.addSource(SOURCE_ID, { type: "geojson", data: geojson });
+            map.addLayer({
+              id: LAYER_ID,
+              type: "circle",
+              source: SOURCE_ID,
+              paint: {
+                // Si no hay 'value', se pinta gris
+                "circle-color": [
+                  "case",
+                  ["has", "value"],
+                  colorExpression("value", pollutant),
+                  "#CCCCCC",
+                ],
+                "circle-radius": [
+                  "interpolate",
+                  ["linear"],
+                  ["zoom"],
+                  3,
+                  3,
+                  8,
+                  6,
+                  12,
+                  9,
+                ],
+                "circle-opacity": 0.85,
+              },
+            });
+            map.setLayoutProperty(LAYER_ID, "visibility", "visible");
+          } else {
+            map.getSource(SOURCE_ID).setData(geojson);
+            map.setPaintProperty(LAYER_ID, "circle-color", [
+              "case",
+              ["has", "value"],
+              colorExpression("value", pollutant),
+              "#CCCCCC",
+            ]);
+            map.setLayoutProperty(LAYER_ID, "visibility", "visible");
+          }
+        } catch (e) {
+          if (e?.name !== "AbortError") console.error("AQ load error:", e);
+        }
+      }
 
-      function ensureSelectionLayer() {
-        if (!map.getSource(SEL_SOURCE)) {
-          map.addSource(SEL_SOURCE, {
-            type: "geojson",
-            data: { type: "FeatureCollection", features: [] },
-          });
-          map.addLayer({
-            id: SEL_LAYER,
-            type: "circle",
-            source: SEL_SOURCE,
-            paint: {
-              "circle-color": [
-                "case",
-                ["has", "value"],
-                colorExpression("value", pollutant),
-                "#666",
-              ],
-              "circle-radius": [
-                "interpolate",
-                ["linear"],
-                ["zoom"],
-                3,
-                5,
-                12,
-                10,
-              ],
-              "circle-stroke-color": "#000",
-              "circle-stroke-width": 2,
-              "circle-opacity": 0.95,
-            },
-          });
-        }
-      }
+      function ensureSelectionLayer() {
+        if (!map.getSource(SEL_SOURCE)) {
+          map.addSource(SEL_SOURCE, {
+            type: "geojson",
+            data: { type: "FeatureCollection", features: [] },
+          });
+          map.addLayer({
+            id: SEL_LAYER,
+            type: "circle",
+            source: SEL_SOURCE,
+            paint: {
+              "circle-color": [
+                "case",
+                ["has", "value"],
+                colorExpression("value", pollutant),
+                "#666",
+              ],
+              "circle-radius": [
+                "interpolate",
+                ["linear"],
+                ["zoom"],
+                3,
+                5,
+                12,
+                10,
+              ],
+              "circle-stroke-color": "#000",
+              "circle-stroke-width": 2,
+              "circle-opacity": 0.95,
+            },
+          });
+        }
+      }
 
-        if (clickHandlerRef.current) map.off("click", clickHandlerRef.current);
+      if (clickHandlerRef.current) map.off("click", clickHandlerRef.current);
 
-        const onClick = async (ev) => {
-          // CORRECCIÓN CLAVE: Garantiza que las fuentes existan antes de llamar a setData
-          ensureSelectionLayer(); 
-          const { lng, lat } = ev.lngLat;
+      const onClick = async (ev) => {
+        ensureSelectionLayer();
+        const { lng, lat } = ev.lngLat;
 
-          map.getSource(SEL_SOURCE).setData({
-            type: "FeatureCollection",
-            features: [
-              {
-                type: "Feature",
-                geometry: { type: "Point", coordinates: [lng, lat] },
-                properties: {},
-              },
-            ],
-          });
+        map.getSource(SEL_SOURCE).setData({
+          type: "FeatureCollection",
+          features: [
+            {
+              type: "Feature",
+              geometry: { type: "Point", coordinates: [lng, lat] },
+              properties: {},
+            },
+          ],
+        });
 
-          try {
-            const m = await fetchAtPoint({ lat, lon: lng, pollutant });
-            if (m) {
-              const parameterId = m.parameter || pollutant;
-              const val = toSafeNumber(m.value);
-              const unit = m.unit || getPollutantUnit(parameterId);
+        try {
+          const m = await fetchAtPoint({ lat, lon: lng, pollutant });
+          if (m) {
+            const parameterId = m.parameter || pollutant;
+            const val = toSafeNumber(m.value);
+            const unit = m.unit || getPollutantUnit(parameterId);
 
-              map.getSource(SEL_SOURCE).setData({
-                type: "FeatureCollection",
-                features: [
-                  {
-                    type: "Feature",
-                    geometry: { type: "Point", coordinates: [lng, lat] },
-                    properties: {
-                      parameter: parameterId,
-                      value: val,
-                      unit,
-                      datetime: m.datetime,
-                    },
-                  },
-                ],
-              });
+            map.getSource(SEL_SOURCE).setData({
+              type: "FeatureCollection",
+              features: [
+                {
+                  type: "Feature",
+                  geometry: { type: "Point", coordinates: [lng, lat] },
+                  properties: {
+                    parameter: parameterId,
+                    value: val,
+                    unit,
+                    datetime: m.datetime,
+                  },
+                },
+              ],
+            });
 
-              const label = getPollutantLabel(parameterId);
-              const html = `
-                <div style="font-family: 'Overpass', system-ui; padding:6px 4px; color:#fff;">
-                  <div><b>${label}</b>: ${
-                Number.isFinite(val) ? val.toFixed(3) : "-"
-              } ${unit || ""}</div>
-                  <div style="color:#B8C0DD; font-size:12px">${
-                    m.datetime ?? ""
-                  }</div>
-                  <div style="color:#9AA3C0; font-size:11px">(${lat.toFixed(
-                    5
-                  )}, ${lng.toFixed(5)})</div>
-                </div>
-              `;
-              new maplibregl.Popup({ closeButton: true, maxWidth: "260px" })
-                .setLngLat([lng, lat])
-                .setHTML(html)
-                .addTo(map);
-            }
-          } catch (err) {
-            console.error("Point query error:", err);
-          }
-        };
+            const label = getPollutantLabel(parameterId);
+            const html = `
+              <div style="font-family: 'Overpass', system-ui; padding:6px 4px; color:#fff;">
+                <div><b>${label}</b>: ${
+              Number.isFinite(val) ? val.toFixed(3) : "-"
+            } ${unit || ""}</div>
+                <div style="color:#B8C0DD; font-size:12px">${
+                  m.datetime ?? ""
+                }</div>
+                <div style="color:#9AA3C0; font-size:11px">(${lat.toFixed(
+                  5
+                )}, ${lng.toFixed(5)})</div>
+              </div>
+            `;
+            new maplibregl.Popup({ closeButton: true, maxWidth: "260px" })
+              .setLngLat([lng, lat])
+              .setHTML(html)
+              .addTo(map);
+          }
+        } catch (err) {
+          console.error("Point query error:", err);
+        }
+      };
 
-        clickHandlerRef.current = onClick;
-        map.on("click", onClick);
-        map.getCanvas().style.cursor = "crosshair";
-      
+      clickHandlerRef.current = onClick;
+      map.on("click", onClick);
+      map.getCanvas().style.cursor = "crosshair";
 
-      const debounced = debounce(loadForCurrentView, 400);
-      const boot = () => {
-        loadForCurrentView();
-      };
-      if (map.isStyleLoaded()) boot();
-      else map.once("idle", boot);
-      map.on("moveend", debounced);
+      const debounced = debounce(loadForCurrentView, 400);
+      const boot = () => loadForCurrentView();
 
-      resizeObsRef.current = new ResizeObserver(() => map.resize());
-      resizeObsRef.current.observe(el);
-    };
+      if (map.isStyleLoaded()) boot();
+      else map.once("load", boot);
 
-    init();
-    return () => {
-      cancelAnimationFrame(raf);
-      abortRef.current?.abort();
-      const map = mapRef.current;
-      if (map && clickHandlerRef.current)
-        map.off("click", clickHandlerRef.current);
-      try {
-        resizeObsRef.current?.disconnect();
-      } catch (error) {
-        console.error("Error al desconectar ResizeObserver:", error);
-      }
-      mapRef.current?.remove();
-      mapRef.current = null;
+      map.on("moveend", debounced);
 
-      if (divRef.current) delete divRef.current.__maplibre_initialized;
-    };
-  }, [pollutant, fetcher, center, zoom]);
+      resizeObsRef.current = new ResizeObserver(() => map.resize());
+      resizeObsRef.current.observe(el);
+    };
 
-  // Si cambia el contaminante, refrescar color del punto seleccionado
-  useLayoutEffect(() => {
-    const map = mapRef.current;
-    if (!map) return;
-    if (map.getLayer("selected-circle")) {
-      map.setPaintProperty("selected-circle", "circle-color", [
-        "case",
-        ["has", "value"],
-        colorExpression("value", pollutant),
-        "#666",
-      ]);
-    }
-  }, [pollutant]);
+    init();
 
-  return (
-    <>
-      <div
-        ref={divRef}
-        className="map-container spaceapps-bg"
-        aria-label="Vista de mapa con mediciones de calidad del aire"
-        role="region"
-      />
+    return () => {
+      if (raf) cancelAnimationFrame(raf);
+      abortRef.current?.abort();
 
-      {/* Botón flotante de notificaciones */}
-      <FloatingNotificationButton onOpenModal={() => setIsModalOpen(true)} />
+      const map = mapRef.current;
+      if (map && clickHandlerRef.current) {
+        map.off("click", clickHandlerRef.current);
+      }
 
-      {/* Modal de suscripción */}
-      <SubscriptionModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-      />
-    </>
-  );
+      try {
+        resizeObsRef.current?.disconnect();
+      } catch (error) {
+        console.error("Error al desconectar ResizeObserver:", error);
+      }
+
+      if (mapRef.current) {
+        mapRef.current.remove();
+        mapRef.current = null;
+      }
+
+      if (divRef.current) delete divRef.current.__maplibre_initialized;
+    };
+  }, [pollutant, fetcher, center, zoom]);
+
+  // Actualiza el color de la capa seleccionada si cambia el contaminante
+  useLayoutEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    if (map.getLayer("selected-circle")) {
+      map.setPaintProperty("selected-circle", "circle-color", [
+        "case",
+        ["has", "value"],
+        colorExpression("value", pollutant),
+        "#666",
+      ]);
+    }
+  }, [pollutant]);
+
+  return (
+    <div style={{ height: "100%", width: "100%", position: "relative" }}>
+      <div
+        ref={divRef}
+        className="map-container"
+        style={{ height: "100%", width: "100%", background: "none" }}
+        aria-label="Vista de mapa con mediciones de calidad del aire"
+        role="region"
+      />
+
+      <FloatingNotificationButton onOpenModal={() => setIsModalOpen(true)} />
+
+      <SubscriptionModal className="floating-btn"
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+      />
+    </div>
+  );
 }
 
 function toSafeNumber(value) {
-  if (value == null) return null;
-  const parsed = Number.parseFloat(String(value).replace(",", "."));
-  return Number.isFinite(parsed) ? parsed : null;
+  if (value == null) return null;
+  const parsed = Number.parseFloat(String(value).replace(",", "."));
+  return Number.isFinite(parsed) ? parsed : null;
 }

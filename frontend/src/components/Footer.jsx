@@ -6,7 +6,7 @@ export default function Footer() {
         <span>
           <b className="text-white">ConstelAR</b> – NASA Space Apps Challenge
         </span>
-        <span>© {year} Todos los derechos reservados</span>
+        <span>© {year} All rights reserved</span>
       </div>
     </footer>
   );

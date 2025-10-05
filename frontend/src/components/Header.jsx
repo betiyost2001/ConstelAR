@@ -5,10 +5,12 @@ import { Link as RouterLink } from "react-router-dom";
 import { CloseIcon, HamburgerIcon } from "@chakra-ui/icons";
 import InfoModalBtn from "./InfoModalBtn";
 
+// MODIFICACIÓN: Se agrega la nueva ruta para TEMPO y se traducen los labels.
 const NAV = [
-  { href: "/", label: "Mapa" },
-  { href: "/contaminantes", label: "¿Qué mide cada contaminante?" },
-  { href: "/proyecto", label: "Sobre el proyecto" },
+  { href: "/", label: "Map" },
+  { href: "/tempo", label: "TEMPO Satellite" }, // NUEVA RUTA
+  { href: "/contaminantes", label: "What Pollutants Measure" },
+  { href: "/proyecto", label: "About the Project" },
 ];
 
 export default function Header() {
@@ -44,7 +46,7 @@ export default function Header() {
         <Flex ml="auto" align="center" gap={3}>
           <InfoModalBtn />
           <IconButton
-            aria-label="Abrir menú"
+            aria-label="Open menu" // Traducido
             display={{ base: "inline-flex", md: "none" }}
             icon={isOpen ? <CloseIcon /> : <HamburgerIcon />}
             onClick={isOpen ? onClose : onOpen}
