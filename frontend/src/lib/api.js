@@ -2,10 +2,16 @@
 import { DEFAULT_POLLUTANT } from "../constants/pollutants";
 
 // Path del router (configurable via VITE_TEMPO_PATH, default: "tempo")
-const TEMPO_PATH = ((import.meta.env.VITE_TEMPO_PATH ?? "tempo").trim() || "tempo");
+const TEMPO_PATH =
+  (import.meta.env.VITE_TEMPO_PATH ?? "tempo").trim() || "tempo";
 
 // Límites por defecto (usados por el Map)
-export const NORTH_AMERICA_BOUNDS = { west: -168, south: 5, east: -52, north: 83 };
+export const NORTH_AMERICA_BOUNDS = {
+  west: -168,
+  south: 5,
+  east: -52,
+  north: 83,
+};
 
 // Base configurable: absoluto (http...) o relativo (/api). Default: /api
 const RAW_BASE = (import.meta.env.VITE_API_BASE || "/api").trim();
@@ -14,7 +20,8 @@ const RAW_BASE = (import.meta.env.VITE_API_BASE || "/api").trim();
 function apiUrl(pathname) {
   const absBase = RAW_BASE.startsWith("http")
     ? RAW_BASE
-    : window.location.origin + (RAW_BASE.startsWith("/") ? RAW_BASE : `/${RAW_BASE}`);
+    : window.location.origin +
+      (RAW_BASE.startsWith("/") ? RAW_BASE : `/${RAW_BASE}`);
   const base = absBase.endsWith("/") ? absBase : absBase + "/";
   return new URL(pathname, base);
 }
@@ -39,11 +46,14 @@ function toNumberSafe(v) {
 const cache = new Map();
 const TTL_MS = 30_000;
 const cacheKey = ({ pollutant, bbox }) => `${pollutant}:${bbox.join(",")}`;
-const setCache  = (k, v) => cache.set(k, { value: v, exp: Date.now() + TTL_MS });
-const getCache  = (k) => {
+const setCache = (k, v) => cache.set(k, { value: v, exp: Date.now() + TTL_MS });
+const getCache = (k) => {
   const it = cache.get(k);
   if (!it) return null;
-  if (Date.now() > it.exp) { cache.delete(k); return null; }
+  if (Date.now() > it.exp) {
+    cache.delete(k);
+    return null;
+  }
   return it.value;
 };
 
@@ -79,6 +89,11 @@ function passthroughOrTempoToGeoJSON(data) {
 
 // ── Carga por vista (usa lat/lon/radius) ─────────────────────────────────────
 export async function fetchMeasurements({ bbox, pollutant, signal }) {
+  // Modo temporal: deshabilitar llamadas a /tempo en desarrollo
+  if (import.meta.env.VITE_DISABLE_TEMPO === "1") {
+    return { type: "FeatureCollection", features: [] };
+  }
+
   // Centro y radio aprox a partir del BBOX
   const [w, s, e, n] = bbox;
   const lat = (s + n) / 2;
@@ -110,7 +125,17 @@ export async function fetchMeasurements({ bbox, pollutant, signal }) {
 }
 
 // ── Consulta puntual (click) ─────────────────────────────────────────────────
-export async function fetchAtPoint({ lat, lon, pollutant = DEFAULT_POLLUTANT, signal }) {
+export async function fetchAtPoint({
+  lat,
+  lon,
+  pollutant = DEFAULT_POLLUTANT,
+  signal,
+}) {
+  // Modo temporal: deshabilitar llamadas a /tempo en desarrollo
+  if (import.meta.env.VITE_DISABLE_TEMPO === "1") {
+    return null;
+  }
+
   const url = apiUrl(`${TEMPO_PATH}/normalized`);
   url.searchParams.set("lat", String(lat.toFixed(5)));
   url.searchParams.set("lon", String(lon.toFixed(5)));
