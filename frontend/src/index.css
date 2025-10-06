@@ -196,3 +196,61 @@ body,
     padding: 16px 24px; /* px-6 py-4 */
   }
 }
+
+/* ===== Modal overlay, container and accessibility helpers ===== */
+
+/* Prevent body scroll when modal is open */
+body.modal-open {
+  overflow: hidden;
+}
+
+/* Make the rest of the app non-interactive while the modal is open */
+body.modal-open #root {
+  pointer-events: none; /* clicks don't pass to the app */
+}
+
+/* Optional: generic fallback for inert (in case a browser lacks full support) */
+[inert] {
+  pointer-events: none !important;
+  user-select: none !important;
+}
+
+/* Ensure the overlay covers the entire viewport and captures clicks */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 1000;
+  /* color set via Tailwind classes in JSX (e.g., bg-black/50) */
+}
+
+/* A full-screen container to center the dialog above the overlay */
+.modal-container {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1001; /* above overlay */
+  pointer-events: none; /* only the dialog content should receive events */
+}
+
+/* The actual dialog content is interactive and sits above everything */
+.modal-content {
+  position: relative;
+  z-index: 1002;
+  pointer-events: auto;
+}
+
+/* Hide the legend entirely while a modal is open (and avoid interactions) */
+body.modal-open .legend-root {
+  display: none !important;
+  visibility: hidden !important;
+}
+
+/* Tailwind alternatives (already used in JSX):
+   - Overlay: fixed inset-0 z-[1000] bg-black/50
+   - Container: fixed inset-0 z-[1001] flex items-center justify-center pointer-events-none
+   - Content: relative z-[1002] pointer-events-auto
+*/

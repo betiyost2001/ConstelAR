@@ -25,7 +25,7 @@ export default function Legend({
   }[position];
 
   return (
-    <div className={`absolute ${posClasses} z-50`}>
+    <div className={`legend-root absolute ${posClasses} z-50`}>
       <div
         className={`p-4 bg-[rgba(7,23,63,0.85)] border border-[rgba(255,255,255,0.10)] rounded-xl min-w-60 transform-gpu transition-transform duration-200 ease-out hover:scale-[1.50] ${originClasses}`}
       >
@@ -37,7 +37,7 @@ export default function Legend({
                 className="w-4.5 h-4.5 rounded-sm border border-[rgba(255,255,255,0.25)]"
                 style={{ background: it.color }}
               />
-              <div className="text-sm opacity-95 text-white fira-sans-regular">
+              <div className="text-sm text-white opacity-95 fira-sans-regular">
                 {it.label}
               </div>
             </div>

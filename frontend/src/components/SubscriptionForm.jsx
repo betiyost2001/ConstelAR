@@ -177,7 +177,7 @@ const SubscriptionForm = React.forwardRef((_, focusRef) => {
           )}
         </div>
         <div className="md:col-start-1">
-          <div className="w-full px-6 py-4  rounded-xl text-center bg-[#EAFE07] hover:bg-[#D4E600] cursor-pointer text-black transition-colors duration-200 text-3xl flex items-center justify-center gap-3 fira-sans-bold">
+          <div className="w-full px-6 py-4 rounded-2xl text-center bg-[#EAFE07] hover:bg-[#D4E600] cursor-pointer text-black transition-colors duration-200 text-3xl flex items-center justify-center gap-3 fira-sans-bold">
             <FontAwesomeIcon icon={faBell} />
             <button type="submit">{t("subscriptionForm.receiveAlerts")}</button>
           </div>
