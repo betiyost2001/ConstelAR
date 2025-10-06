@@ -61,13 +61,13 @@ export default function ProjectPage() {
               <span style={{ color: accentColor, fontWeight: "bold" }}>
                 Backend:
               </span>{" "}
-              FastAPI; we ingest TEMPO data via Earthdata.
+              FastAPI; {t("projectPage.backend")}.
             </ListItem>
             <ListItem>
               <span style={{ color: accentColor, fontWeight: "bold" }}>
                 Architecture:
               </span>{" "}
-              Hexagonal; normalized endpoints.
+              {t("projectPage.architecture")}
             </ListItem>
           </List>
         </Box>
@@ -100,8 +100,8 @@ export default function ProjectPage() {
                 />
                 <Text>
                   <span style={{ fontWeight: "bold" }}>Reader (or Vercel)</span>
-                  : Platform used for frontend deployment and global
-                  distribution.
+                  {": "}
+                  {t("projectPage.reader")}
                 </Text>
               </HStack>
             </ListItem>
@@ -115,24 +115,24 @@ export default function ProjectPage() {
                 />
                 <Text>
                   <span style={{ fontWeight: "bold" }}>GitHub</span>:
-                  Open-source repository for project collaboration and
-                  management.
+                  {t("projectPage.github")}
                 </Text>
               </HStack>
             </ListItem>
 
             <ListItem>
               <span style={{ fontWeight: "bold", color: accentColor }}>
-                NASA TEMPO & Earthdata
+                NASA TEMPO & Harmony-API
               </span>
-              : Primary sources for air quality data.
+              {": "}
+              {t("projectPage.nasaTempo")}
             </ListItem>
             <ListItem>
               <span style={{ fontWeight: "bold", color: accentColor }}>
                 Weather/Climate API
               </span>
-              : Used to correlate meteorological events with contaminant
-              measurements.
+              {": "}
+              {t("projectPage.weatherApi")}
             </ListItem>
           </List>
         </Box>

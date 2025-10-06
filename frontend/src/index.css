@@ -51,6 +51,13 @@ body,
   font-style: normal;
 }
 
+.overpass-medium {
+  font-family: "Overpass", sans-serif;
+  font-optical-sizing: auto;
+  font-weight: 500;
+  font-style: normal;
+}
+
 .overpass-regular {
   font-family: "Overpass", sans-serif;
   font-optical-sizing: auto;

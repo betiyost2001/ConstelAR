@@ -56,7 +56,7 @@ export default function Header() {
         <Text
           as={RouterLink}
           to="/"
-          className="text-2xl fira-sans-bold md:text-3xl"
+          className="text-2xl overpass-bold md:text-3xl"
         >
           {t("header.title")}
         </Text>
@@ -134,7 +134,7 @@ export default function Header() {
       <Modal isOpen={isModalOpen} onClose={onModalClose} size="lg" isCentered>
         <ModalOverlay />
         <ModalContent>
-          <ModalHeader className="bg-[#07173F] text-2xl fira-sans-bold rounded-t-md">
+          <ModalHeader className="bg-[#07173F] text-2xl overpass-bold rounded-t-md">
             {t("modal.title")}
           </ModalHeader>
           <ModalCloseButton />

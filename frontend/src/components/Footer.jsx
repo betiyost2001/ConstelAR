@@ -4,7 +4,7 @@ export default function Footer() {
   const { t } = useTranslation();
   const year = new Date().getFullYear();
   return (
-    <footer className="mt-8 border-t border-white/10 bg-[#0B2E6B] text-[#B8C0DD]">
+    <footer className="  bg-[#0B2E6B] text-[#B8C0DD]">
       <div className="flex flex-col items-center justify-between gap-2 px-4 py-4 mx-auto text-sm max-w-7xl sm:px-6 lg:px-8 sm:flex-row">
         <span>
           <b className="text-white">ConstelAR</b> – {t("footer.text")}

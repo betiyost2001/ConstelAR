@@ -4,7 +4,7 @@ import { searchCitiesInState } from "../lib/citiesApi";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faBell } from "@fortawesome/free-solid-svg-icons";
 
-export default function SubscriptionForm() {
+const SubscriptionForm = React.forwardRef((_, focusRef) => {
   const { t } = useTranslation();
   const [formData, setFormData] = useState({
     email: "",
@@ -90,13 +90,13 @@ export default function SubscriptionForm() {
   const validateForm = () => {
     const newErrors = {};
     if (!formData.email || !validateEmail(formData.email)) {
-      newErrors.email = "Invalid email address"; // Correo electrónico inválido
+      newErrors.email = t("subscriptionForm.errors.invalidEmail"); // Correo electrónico inválido
     }
     if (!formData.phone || !validatePhone(formData.phone)) {
-      newErrors.phone = "Invalid phone number (minimum 10 digits)"; // Número de teléfono inválido (mínimo 10 dígitos)
+      newErrors.phone = t("subscriptionForm.errors.invalidPhone"); // Número de teléfono inválido (mínimo 10 dígitos)
     }
     if (!formData.city) {
-      newErrors.city = "Please select a city"; // Selecciona una ciudad
+      newErrors.city = t("subscriptionForm.errors.selectCity"); // Selecciona una ciudad
     }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -106,7 +106,7 @@ export default function SubscriptionForm() {
     e.preventDefault();
     if (validateForm()) {
       console.log("Form data:", formData);
-      setSuccessMessage("Request sent! Check your email to confirm."); // ¡Petición enviada! Revisa tu correo para confirmar. // Reset form
+      setSuccessMessage(t("subscriptionForm.success")); // ¡Petición enviada! Revisa tu correo para confirmar. // Reset form
       setFormData({
         email: "",
         phone: "",
@@ -118,108 +118,81 @@ export default function SubscriptionForm() {
 
   return (
     <div className="w-full bg-[#10182bad] rounded-3xl p-8 md:p-12">
-           {" "}
       <div className="text-3xl text-center">
-               {" "}
-        <h2 className="overpass-bold">Do you want to receive alerts?</h2>{" "}
-        {/* ¿Quieres recibir avisos? */}     {" "}
+        <h2 className="overpass-bold">{t("subscriptionForm.title")}</h2>
       </div>
-           {" "}
       <div className="mb-8 text-xl text-center text-gray-400 md:mb-12">
-               {" "}
-        <h3 className="overpass-medium">
-                    We will send you an email to confirm your subscription.{" "}
-          {/* Te enviaremos un correo para confirmar tu suscripción. */}       {" "}
-        </h3>
-               {" "}
-        <p>
-                    And you will be notified when there are new pollution alerts
-          in your city.{" "}
-          {/* Y serás notificado cuando haya nuevas alertas de contaminación en tu ciudad. */}
-                 {" "}
+        <h3 className="overpass-semibold">{t("subscriptionForm.subtitle")}</h3>
+        <p className="fira-sans-regular">
+          {t("subscriptionForm.notification")}
         </p>
-             {" "}
       </div>
-           {" "}
       <form
         onSubmit={handleSubmit}
         className="grid grid-cols-1 gap-8 md:grid-cols-2 md:gap-x-12"
       >
-                {/* Email */}       {" "}
         <div className="text-black">
-                   {" "}
-          <label htmlFor="email" className="block mb-3 text-white md:text-lg">
-                        Email Address {/* Correo Electrónico */}         {" "}
+          <label
+            htmlFor="email"
+            className="block mb-3 text-white md:text-lg fira-sans-medium"
+          >
+            {t("subscriptionForm.email")}
           </label>
-                   {" "}
           <div className="w-full px-4 py-3 bg-white border-0 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
-                       {" "}
             <input
+              ref={focusRef}
               type="email"
               id="email"
               name="email"
               value={formData.email}
               onChange={handleInputChange}
-              placeholder="Email Address" // Correo Electrónico
+              placeholder={t("subscriptionForm.email")} // Correo Electrónico
               required
             />
-                     {" "}
           </div>
-                   {" "}
           {errors.email && (
             <p className="mt-1 text-sm text-red-500">{errors.email}</p>
           )}
-                 {" "}
         </div>
-                {/* Phone */}       {" "}
         <div className="text-black">
-                   {" "}
-          <label htmlFor="phone" className="block mb-3 text-white md:text-lg">
-                        Phone {/* Teléfono */}         {" "}
+          <label
+            htmlFor="phone"
+            className="block mb-3 text-white md:text-lg fira-sans-medium"
+          >
+            {t("subscriptionForm.phone")}
           </label>
-                   {" "}
           <div className="w-full px-4 py-3 bg-white text-[#07173F] border-0 rounded-xl placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                       {" "}
             <input
               type="tel"
               id="phone"
               name="phone"
               value={formData.phone}
               onChange={handleInputChange}
-              placeholder="Phone" // Teléfono
+              placeholder={t("subscriptionForm.phone")}
               required
             />
-                     {" "}
           </div>
-                   {" "}
           {errors.phone && (
             <p className="mt-1 text-sm text-red-500">{errors.phone}</p>
           )}
-                 {" "}
         </div>
-                {/* Submit Button (left column) */}       {" "}
         <div className="md:col-start-1">
-                   {" "}
-          <div className="w-full px-6 py-4  rounded-xl text-center bg-[#EAFE07] hover:bg-[#D4E600] cursor-pointer text-black transition-colors duration-200 text-3xl flex items-center justify-center gap-3">
-                        <FontAwesomeIcon icon={faBell} />           {" "}
-            <button type="submit">Receive Alerts</button> {/* Recibir */}       
-             {" "}
+          <div className="w-full px-6 py-4  rounded-xl text-center bg-[#EAFE07] hover:bg-[#D4E600] cursor-pointer text-black transition-colors duration-200 text-3xl flex items-center justify-center gap-3 fira-sans-bold">
+            <FontAwesomeIcon icon={faBell} />
+            <button type="submit">{t("subscriptionForm.receiveAlerts")}</button>
           </div>
-                   {" "}
           {successMessage && (
             <p className="mt-3 text-center text-green-500">{successMessage}</p>
           )}
-                 {" "}
         </div>
-                {/* City */}       {" "}
         <div className="text-black">
-                   {" "}
-          <label htmlFor="city" className="block mb-3 text-white md:text-lg">
-                        City {/* Ciudad */}         {" "}
+          <label
+            htmlFor="city"
+            className="block mb-3 text-white md:text-lg fira-sans-medium"
+          >
+            {t("subscriptionForm.city")}
           </label>
-                   {" "}
           <div className="w-full px-6 py-3 bg-white text-[#07173F] border-0 rounded-xl placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50">
-                       {" "}
             <input
               type="text"
               id="city"
@@ -227,15 +200,12 @@ export default function SubscriptionForm() {
               value={formData.city}
               onChange={handleInputChange}
               list="cities-list"
-              placeholder="Select a city" // Selecciona una ciudad
+              placeholder={t("subscriptionForm.selectCity")} // Selecciona una ciudad
               disabled={loading}
               required
             />
-                     {" "}
           </div>
-                   {" "}
           <datalist id="cities-list">
-                       {" "}
             {cities.map((city, idx) => (
               <option
                 key={`${
@@ -246,23 +216,18 @@ export default function SubscriptionForm() {
                 }`}
               />
             ))}
-                     {" "}
           </datalist>
-                   {" "}
           {cityApiError && (
             <p className="mt-1 text-sm text-red-400" aria-live="polite">
-                            {cityApiError}           {" "}
+              {cityApiError}
             </p>
           )}
-                   {" "}
           {errors.city && (
             <p className="mt-1 text-sm text-red-500">{errors.city}</p>
           )}
-                 {" "}
         </div>
-             {" "}
       </form>
-         {" "}
     </div>
   );
-}
+});
+export default SubscriptionForm;

@@ -92,19 +92,18 @@
     "title": "Sobre el Proyecto",
     "subtitle": "ConstelAR es nuestra propuesta para el NASA Space Apps Challenge. Visualizamos mediciones de la misión NASA TEMPO para entender la calidad del aire en tiempo casi real.",
     "technology": "Tecnología",
-    "frontend": "Frontend: React + Vite + Chakra + MapLibre.",
-    "backend": "Backend: FastAPI; ingerimos datos TEMPO vía Earthdata.",
+    "backend": "Ingerimos datos TEMPO vía Harmony-API.",
     "architecture": "Arquitectura: Hexagonal; endpoints normalizados.",
     "challengeResources": "Recursos del Desafío",
-    "reader": "Reader (o Vercel): Plataforma utilizada para el despliegue del frontend y distribución global.",
-    "github": "GitHub: Repositorio de código abierto para la colaboración y gestión del proyecto.",
-    "nasaTempo": "NASA TEMPO & Earthdata: Fuentes primarias para datos de calidad del aire.",
-    "weatherApi": "API de Clima/Tiempo: Utilizada para correlacionar eventos meteorológicos con mediciones de contaminantes.",
+    "reader": "Plataforma utilizada para el despliegue del frontend y distribución global.",
+    "github": "Repositorio de código abierto para la colaboración y gestión del proyecto.",
+    "nasaTempo": "Fuentes primarias para datos de calidad del aire.",
+    "weatherApi": "Utilizada para correlacionar eventos meteorológicos con mediciones de contaminantes.",
     "footer": "Código Abierto 🌎 · Equipo Argentino ConstelAR."
   },
   "footer": {
-    "text": "ConstelAR – NASA Space Apps Challenge",
-    "copyright": "© {{year}} Todos los derechos reservados"
+    "text": "NASA Space Apps Challenge",
+    "copyright": "Todos los derechos reservados"
   },
   "filterBar": {
     "pollutant": "Contaminante",
@@ -112,6 +111,7 @@
     "select": "Seleccionar un contaminante"
   },
   "subscriptionForm": {
+    "petition": "Quiero recibir avisos",
     "title": "¿Quieres recibir avisos?",
     "subtitle": "Te enviaremos un correo para confirmar tu suscripción.",
     "notification": "Y serás notificado cuando haya nuevas alertas de contaminación en tu ciudad.",
@@ -119,11 +119,11 @@
     "phone": "Teléfono",
     "city": "Ciudad",
     "receiveAlerts": "Recibir Avisos",
-    "selectCity": "Seleccionar una ciudad",
+    "selectCity": "Ingresa una ciudad",
     "errors": {
       "invalidEmail": "Correo electrónico inválido",
       "invalidPhone": "Número de teléfono inválido (mínimo 10 dígitos)",
-      "selectCity": "Seleccionar una ciudad",
+      "selectCity": "Ciudad ingresada no valida",
       "noCities": "No se encontraron ciudades que coincidan con \"{{query}}\".",
       "apiError": "Error al cargar ciudades (posible límite de API). Intenta nuevamente."
     },

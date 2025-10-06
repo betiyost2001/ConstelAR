@@ -92,19 +92,18 @@
     "title": "About the Project",
     "subtitle": "ConstelAR is our proposal for the NASA Space Apps Challenge. We visualize measurements from the NASA TEMPO mission to understand air quality in near real-time.",
     "technology": "Technology",
-    "frontend": "Frontend: React + Vite + Chakra + MapLibre.",
-    "backend": "Backend: FastAPI; we ingest TEMPO data via Earthdata.",
-    "architecture": "Architecture: Hexagonal; normalized endpoints.",
+    "backend": "we ingest TEMPO data via Harmony-API.",
+    "architecture": "Hexagonal; normalized endpoints.",
     "challengeResources": "Challenge Resources",
-    "reader": "Reader (or Vercel): Platform used for frontend deployment and global distribution.",
-    "github": "GitHub: Open-source repository for project collaboration and management.",
-    "nasaTempo": "NASA TEMPO & Earthdata: Primary sources for air quality data.",
-    "weatherApi": "Weather/Climate API: Used to correlate meteorological events with contaminant measurements.",
+    "reader": "Platform used for frontend deployment and global distribution.",
+    "github": " Open-source repository for project collaboration and management.",
+    "nasaTempo": "Primary sources for air quality data.",
+    "weatherApi": "Used to correlate meteorological events with contaminant measurements.",
     "footer": "Open Source 🌎 · Argentine Team ConstelAR."
   },
   "footer": {
-    "text": "ConstelAR – NASA Space Apps Challenge",
-    "copyright": "© {{year}} All rights reserved"
+    "text": "NASA Space Apps Challenge",
+    "copyright": "All rights reserved"
   },
   "filterBar": {
     "pollutant": "Pollutant",
@@ -112,6 +111,7 @@
     "select": "Select a pollutant"
   },
   "subscriptionForm": {
+    "petition": "I want to receive notifications",
     "title": "Do you want to receive alerts?",
     "subtitle": "We will send you an email to confirm your subscription.",
     "notification": "And you will be notified when there are new pollution alerts in your city.",
@@ -119,11 +119,11 @@
     "phone": "Phone",
     "city": "City",
     "receiveAlerts": "Receive Alerts",
-    "selectCity": "Select a city",
+    "selectCity": "Type a city",
     "errors": {
       "invalidEmail": "Invalid email address",
       "invalidPhone": "Invalid phone number (minimum 10 digits)",
-      "selectCity": "Please select a city",
+      "selectCity": "Type a city",
       "noCities": "No cities matching \"{{query}}\" were found.",
       "apiError": "Error loading cities (possible API limit). Please try again."
     },

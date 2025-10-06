@@ -28,8 +28,8 @@ export default function InfoModalBtn() {
                 <ModalOverlay />       {" "}
         <ModalContent>
                    {" "}
-          <ModalHeader className="bg-[#07173F] text-2xl fira-sans-bold rounded-t-md">
-                        Pollutants and why they matter{" "}
+          <ModalHeader className="bg-[#07173F] text-2xl overpass-bold rounded-t-md">
+            Pollutants and why they matter{" "}
             {/* Contaminantes y por qué importan */}         {" "}
           </ModalHeader>
                     <ModalCloseButton />         {" "}
