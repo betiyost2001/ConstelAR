@@ -1,19 +1,17 @@
 import { useLayoutEffect, useRef, useState } from "react";
 import maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
+import MapboxDraw from "@mapbox/mapbox-gl-draw";
+import "@mapbox/mapbox-gl-draw/dist/mapbox-gl-draw.css";
+import { toast } from "react-toastify";
 
 import {
   fetchMeasurements,
   bboxFromMap,
-  fetchAtPoint,
   NORTH_AMERICA_BOUNDS,
 } from "../lib/api";
 import { colorExpression } from "../constants/aqi";
-import {
-  DEFAULT_POLLUTANT,
-  getPollutantLabel,
-  getPollutantUnit,
-} from "../constants/pollutants";
+import { DEFAULT_POLLUTANT } from "../constants/pollutants";
 import FloatingNotificationButton from "./FloatingNotificationButton";
 import SubscriptionModal from "./SubscriptionModal";
 
@@ -38,12 +36,14 @@ export default function MapView({
   fetcher = fetchMeasurements,
   center = DEFAULT_CENTER,
   zoom = DEFAULT_ZOOM,
+  selectedBbox,
+  onBboxChange,
 }) {
   const mapRef = useRef(null);
   const divRef = useRef(null);
   const abortRef = useRef(null);
-  const clickHandlerRef = useRef(null);
   const resizeObsRef = useRef(null);
+  const drawRef = useRef(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   // Mapa y capas
@@ -96,8 +96,6 @@ export default function MapView({
 
       const SOURCE_ID = "aq-points";
       const LAYER_ID = "aq-circles";
-      const SEL_SOURCE = "selected-point";
-      const SEL_LAYER = "selected-circle";
 
       async function loadForCurrentView() {
         abortRef.current?.abort();
@@ -110,6 +108,7 @@ export default function MapView({
             bbox,
             pollutant,
             signal: controller.signal,
+            selectedBbox,
           });
 
           if (!map.getSource(SOURCE_ID)) {
@@ -152,117 +151,51 @@ export default function MapView({
             map.setLayoutProperty(LAYER_ID, "visibility", "visible");
           }
         } catch (e) {
-          if (e?.name !== "AbortError") console.error("AQ load error:", e);
-        }
-      }
-
-      function ensureSelectionLayer() {
-        if (!map.getSource(SEL_SOURCE)) {
-          map.addSource(SEL_SOURCE, {
-            type: "geojson",
-            data: { type: "FeatureCollection", features: [] },
-          });
-          map.addLayer({
-            id: SEL_LAYER,
-            type: "circle",
-            source: SEL_SOURCE,
-            paint: {
-              "circle-color": [
-                "case",
-                ["has", "value"],
-                colorExpression("value", pollutant),
-                "#666",
-              ],
-              "circle-radius": [
-                "interpolate",
-                ["linear"],
-                ["zoom"],
-                3,
-                5,
-                12,
-                10,
-              ],
-              "circle-stroke-color": "#000",
-              "circle-stroke-width": 2,
-              "circle-opacity": 0.95,
-            },
-          });
-        }
-      }
-
-      if (clickHandlerRef.current) map.off("click", clickHandlerRef.current);
-
-      const onClick = async (ev) => {
-        ensureSelectionLayer();
-        const { lng, lat } = ev.lngLat;
-
-        map.getSource(SEL_SOURCE).setData({
-          type: "FeatureCollection",
-          features: [
-            {
-              type: "Feature",
-              geometry: { type: "Point", coordinates: [lng, lat] },
-              properties: {},
-            },
-          ],
-        });
-
-        try {
-          const m = await fetchAtPoint({ lat, lon: lng, pollutant });
-          if (m) {
-            const parameterId = m.parameter || pollutant;
-            const val = toSafeNumber(m.value);
-            const unit = m.unit || getPollutantUnit(parameterId);
-
-            map.getSource(SEL_SOURCE).setData({
-              type: "FeatureCollection",
-              features: [
-                {
-                  type: "Feature",
-                  geometry: { type: "Point", coordinates: [lng, lat] },
-                  properties: {
-                    parameter: parameterId,
-                    value: val,
-                    unit,
-                    datetime: m.datetime,
-                  },
-                },
-              ],
-            });
-
-            const label = getPollutantLabel(parameterId);
-            const html = `
-              <div style="font-family: 'Overpass', system-ui; padding:6px 4px; color:#fff;">
-                <div><b>${label}</b>: ${
-              Number.isFinite(val) ? val.toFixed(3) : "-"
-            } ${unit || ""}</div>
-                <div style="color:#B8C0DD; font-size:12px">${
-                  m.datetime ?? ""
-                }</div>
-                <div style="color:#9AA3C0; font-size:11px">(${lat.toFixed(
-                  5
-                )}, ${lng.toFixed(5)})</div>
-              </div>
-            `;
-            new maplibregl.Popup({ closeButton: true, maxWidth: "260px" })
-              .setLngLat([lng, lat])
-              .setHTML(html)
-              .addTo(map);
+          if (e?.name !== "AbortError") {
+            console.error("AQ load error:", e);
+            toast.error("Error loading air quality data. Please try again.");
           }
-        } catch (err) {
-          console.error("Point query error:", err);
         }
-      };
+      }
 
-      clickHandlerRef.current = onClick;
-      map.on("click", onClick);
-      map.getCanvas().style.cursor = "crosshair";
+      map.getCanvas().style.cursor = "default";
 
       const debounced = debounce(loadForCurrentView, 400);
       const boot = () => loadForCurrentView();
 
       if (map.isStyleLoaded()) boot();
       else map.once("load", boot);
+
+      // Setup draw after map is loaded
+      map.once("load", () => {
+        const draw = new MapboxDraw({
+          displayControlsDefault: true,
+          controls: {
+            polygon: true,
+            trash: true,
+          },
+        });
+        map.addControl(draw, "top-left");
+        draw.changeMode("draw_polygon");
+        drawRef.current = draw;
+
+        map.on("draw.create", (e) => {
+          const feature = e.features[0];
+          if (feature.geometry.type === "Polygon") {
+            const coords = feature.geometry.coordinates[0];
+            const lons = coords.map((c) => c[0]);
+            const lats = coords.map((c) => c[1]);
+            const bbox = [
+              Math.min(...lons),
+              Math.min(...lats),
+              Math.max(...lons),
+              Math.max(...lats),
+            ];
+            onBboxChange(bbox);
+            draw.changeMode("simple_select");
+          }
+        });
+      });
 
       map.on("moveend", debounced);
 
@@ -275,11 +208,6 @@ export default function MapView({
     return () => {
       if (raf) cancelAnimationFrame(raf);
       abortRef.current?.abort();
-
-      const map = mapRef.current;
-      if (map && clickHandlerRef.current) {
-        map.off("click", clickHandlerRef.current);
-      }
 
       try {
         resizeObsRef.current?.disconnect();
@@ -294,7 +222,7 @@ export default function MapView({
 
       if (divRef.current) delete divRef.current.__maplibre_initialized;
     };
-  }, [pollutant, fetcher, center, zoom]);
+  }, [pollutant, fetcher, center, zoom, selectedBbox]);
 
   // Actualiza el color de la capa seleccionada si cambia el contaminante
   useLayoutEffect(() => {
@@ -322,16 +250,11 @@ export default function MapView({
 
       <FloatingNotificationButton onOpenModal={() => setIsModalOpen(true)} />
 
-      <SubscriptionModal className="floating-btn"
+      <SubscriptionModal
+        className="floating-btn"
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
       />
     </div>
   );
-}
-
-function toSafeNumber(value) {
-  if (value == null) return null;
-  const parsed = Number.parseFloat(String(value).replace(",", "."));
-  return Number.isFinite(parsed) ? parsed : null;
 }

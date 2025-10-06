@@ -2,11 +2,13 @@ import React from "react";
 import { legendFor } from "../constants/aqi";
 import { DEFAULT_POLLUTANT } from "../constants/pollutants";
 import FilterBar from "./FilterBar";
+import { useTranslation } from "react-i18next";
 
 export default function Legend({
   pollutant: selectedPollutant,
   position = "bottom-right",
   onChange,
+  onResetBbox,
 }) {
   const effectivePollutant = selectedPollutant ?? DEFAULT_POLLUTANT;
   const items = legendFor(effectivePollutant);
@@ -23,6 +25,8 @@ export default function Legend({
     "top-right": "origin-top-right",
     "top-left": "origin-top-left",
   }[position];
+
+  const { t } = useTranslation();
 
   return (
     <div className={`legend-root absolute ${posClasses} z-50`}>
@@ -42,6 +46,11 @@ export default function Legend({
               </div>
             </div>
           ))}
+        </div>
+        <div className="py-2 pt-4 mt-4 text-lg text-center text-white transition-colors bg-red-600 rounded-md hover:bg-red-700 hover:cursor-pointer">
+          <button onClick={onResetBbox}>
+            {t("modalLegendPollutants.reset")}
+          </button>
         </div>
       </div>
     </div>

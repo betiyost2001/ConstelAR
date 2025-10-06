@@ -26,6 +26,9 @@
     },
     "readMethodology": "Read methodology"
   },
+  "modalLegendPollutants": {
+    "reset": "Reset selection"
+  },
   "pollutantsPage": {
     "title": "What Does Each Pollutant Measure?",
     "subtitle": "A quick guide to interpreting the map and satellite values (TEMPO).",

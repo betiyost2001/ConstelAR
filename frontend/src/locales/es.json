@@ -26,6 +26,9 @@
     },
     "readMethodology": "Leer metodología"
   },
+  "modalLegendPollutants": {
+    "reset": "Resetear selección"
+  },
   "pollutantsPage": {
     "title": "¿Qué mide cada contaminante?",
     "subtitle": "Una guía rápida para interpretar el mapa y los valores satelitales (TEMPO).",

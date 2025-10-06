@@ -6,25 +6,34 @@ const AVOGADRO = 6.02214076e23;
 const MOL_PER_M2_PER_MOLEC_CM2 = 1e4 / AVOGADRO; // ≈ 1.66054e-20
 
 function normalizeValueAndUnit(parameter, value, unit) {
- // **SOLUCIÓN: Deshabilitar la conversión para TEMPO**
- // Para que los valores (ej: 2e15) coincidan con la escala de colores,
- // simplemente devolvemos el valor original (molecules/cm^2).
- 
- const p = String(parameter || "").toLowerCase();
- 
- // NO HACER NADA si la unidad es molecules/cm^2 para TEMPO
- if (unit === "molecules/cm^2" && (p === "no2" || p === "so2" || p === "hcho")) {
-   return { value, unit }; // Devolver el valor original.
- }
+  // **SOLUCIÓN: Deshabilitar la conversión para TEMPO**
+  // Para que los valores (ej: 2e15) coincidan con la escala de colores,
+  // simplemente devolvemos el valor original (molecules/cm^2).
 
- // Para otros contaminantes (como Ozono en DU), o si se añade otra fuente:
- return { value, unit }; 
+  const p = String(parameter || "").toLowerCase();
+
+  // NO HACER NADA si la unidad es molecules/cm^2 para TEMPO
+  if (
+    unit === "molecules/cm^2" &&
+    (p === "no2" || p === "so2" || p === "hcho")
+  ) {
+    return { value, unit }; // Devolver el valor original.
+  }
+
+  // Para otros contaminantes (como Ozono en DU), o si se añade otra fuente:
+  return { value, unit };
 }
 // Path del router (configurable via VITE_TEMPO_PATH, default: "tempo")
-const TEMPO_PATH = (import.meta.env.VITE_TEMPO_PATH ?? "tempo").trim() || "tempo";
+const TEMPO_PATH =
+  (import.meta.env.VITE_TEMPO_PATH ?? "tempo").trim() || "tempo";
 
 // Límites por defecto (usados por el Map)
-export const NORTH_AMERICA_BOUNDS = { west: -168, south: 5, east: -52, north: 83 };
+export const NORTH_AMERICA_BOUNDS = {
+  west: -168,
+  south: 5,
+  east: -52,
+  north: 83,
+};
 
 // Base configurable: absoluto (http...) o relativo (/api). Default: /api
 const RAW_BASE = (import.meta.env.VITE_API_BASE || "/api").trim();
@@ -33,7 +42,8 @@ const RAW_BASE = (import.meta.env.VITE_API_BASE || "/api").trim();
 function apiUrl(pathname) {
   const absBase = RAW_BASE.startsWith("http")
     ? RAW_BASE
-    : window.location.origin + (RAW_BASE.startsWith("/") ? RAW_BASE : `/${RAW_BASE}`);
+    : window.location.origin +
+      (RAW_BASE.startsWith("/") ? RAW_BASE : `/${RAW_BASE}`);
   const base = absBase.endsWith("/") ? absBase : absBase + "/";
   return new URL(pathname, base);
 }
@@ -76,8 +86,11 @@ function tempoResultsToGeoJSON(data) {
     .map((r) => {
       const [lat, lon, parameter, value, unit, datetime] = r;
       const valNum = toNumberSafe(value);
-      const { value: convVal, unit: convUnit } =
-        normalizeValueAndUnit(parameter, valNum, unit);
+      const { value: convVal, unit: convUnit } = normalizeValueAndUnit(
+        parameter,
+        valNum,
+        unit
+      );
 
       return {
         type: "Feature",
@@ -100,25 +113,18 @@ function passthroughOrTempoToGeoJSON(data) {
   return tempoResultsToGeoJSON(data);
 }
 
-// ── Carga por vista (usa lat/lon/radius) ─────────────────────────────────────
-export async function fetchMeasurements({ bbox, pollutant, signal }) {
+// ── Carga por vista (usa bbox o lat/lon/radius) ─────────────────────────────────────
+export async function fetchMeasurements({
+  bbox,
+  pollutant,
+  signal,
+  selectedBbox,
+}) {
   if (import.meta.env.VITE_DISABLE_TEMPO === "1") {
     return { type: "FeatureCollection", features: [] };
   }
 
-  const [w, s, e, n] = bbox;
-  const lat = (s + n) / 2;
-  const lon = (w + e) / 2;
-  const latKm = 111_000;
-  const lonKm = 111_000 * Math.cos((lat * Math.PI) / 180);
-  const rx = (Math.abs(e - w) * lonKm) / 2;
-  const ry = (Math.abs(n - s) * latKm) / 2;
-  const radius = Math.min(Math.hypot(rx, ry), 30_000); // máx 30 km
-
   const url = apiUrl(`${TEMPO_PATH}/normalized`);
-  url.searchParams.set("lat", lat.toFixed(5));
-  url.searchParams.set("lon", lon.toFixed(5));
-  url.searchParams.set("radius", String(Math.round(radius)));
   url.searchParams.set("limit", "200");
   url.searchParams.set("parameter", toBackendParam(pollutant));
   // filtros que alivian al back y mejoran mapa
@@ -129,7 +135,27 @@ export async function fetchMeasurements({ bbox, pollutant, signal }) {
     url.searchParams.set("min", "1e15");
   }
 
-  const key = cacheKey({ pollutant, bbox });
+  if (selectedBbox) {
+    // Use bbox directly
+    const [w, s, e, n] = selectedBbox;
+    url.searchParams.set("bbox", `${w},${s},${e},${n}`);
+  } else {
+    // Use lat/lon/radius from bbox
+    const [w, s, e, n] = bbox;
+    const lat = (s + n) / 2;
+    const lon = (w + e) / 2;
+    const latKm = 111_000;
+    const lonKm = 111_000 * Math.cos((lat * Math.PI) / 180);
+    const rx = (Math.abs(e - w) * lonKm) / 2;
+    const ry = (Math.abs(n - s) * latKm) / 2;
+    const radius = Math.min(Math.hypot(rx, ry), 30_000); // máx 30 km
+    url.searchParams.set("lat", lat.toFixed(5));
+    url.searchParams.set("lon", lon.toFixed(5));
+    url.searchParams.set("radius", String(Math.round(radius)));
+  }
+
+  const cacheBbox = selectedBbox || bbox;
+  const key = cacheKey({ pollutant, bbox: cacheBbox });
   const fromCache = getCache(key);
   if (fromCache) return fromCache;
 
@@ -143,7 +169,12 @@ export async function fetchMeasurements({ bbox, pollutant, signal }) {
 }
 
 // ── Consulta puntual (click) ─────────────────────────────────────────────────
-export async function fetchAtPoint({ lat, lon, pollutant = DEFAULT_POLLUTANT, signal }) {
+export async function fetchAtPoint({
+  lat,
+  lon,
+  pollutant = DEFAULT_POLLUTANT,
+  signal,
+}) {
   if (import.meta.env.VITE_DISABLE_TEMPO === "1") {
     return null;
   }
