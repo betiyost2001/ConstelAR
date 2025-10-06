@@ -1,10 +1,33 @@
 export const TEMPO_POLLUTANTS = [
-  { id: "no2",  apiId: "NO2",  label: "Dióxido de nitrógeno (NO₂)", shortLabel: "NO₂",  unit: "molecules/cm²" },
-  { id: "so2",  apiId: "SO2",  label: "Dióxido de azufre (SO₂)",   shortLabel: "SO₂",  unit: "molecules/cm²" }, // si luego lo usamos
-  { id: "o3",   apiId: "O3",   label: "Ozono troposférico (O₃)",    shortLabel: "O₃",   unit: "DU" },
-  { id: "hcho", apiId: "HCHO", label: "Formaldehído (HCHO)",        shortLabel: "HCHO", unit: "molecules/cm²" },
+  {
+    id: "no2",
+    apiId: "NO2",
+    labelKey: "pollutantsPage.pollutants.no2.label",
+    shortLabel: "NO₂",
+    unit: "molecules/cm²",
+  },
+  {
+    id: "so2",
+    apiId: "SO2",
+    labelKey: "pollutantsPage.pollutants.so2.label",
+    shortLabel: "SO₂",
+    unit: "molecules/cm²",
+  },
+  {
+    id: "o3",
+    apiId: "O3",
+    labelKey: "pollutantsPage.pollutants.o3.label",
+    shortLabel: "O₃",
+    unit: "DU",
+  },
+  {
+    id: "hcho",
+    apiId: "HCHO",
+    labelKey: "pollutantsPage.pollutants.hcho.label",
+    shortLabel: "HCHO",
+    unit: "molecules/cm²",
+  },
 ];
-
 
 export const DEFAULT_POLLUTANT = TEMPO_POLLUTANTS[0].id;
 
@@ -23,8 +46,7 @@ export const API_TO_UI = Object.fromEntries(
 export const getPollutantLabel = (id) =>
   POLLUTANTS_BY_ID[id]?.shortLabel ?? id?.toUpperCase?.() ?? "";
 
-export const getPollutantLongLabel = (id) =>
-  POLLUTANTS_BY_ID[id]?.label ?? id?.toUpperCase?.() ?? "";
+export const getPollutantLongLabel = (id, t) =>
+  t(POLLUTANTS_BY_ID[id]?.labelKey) ?? id?.toUpperCase?.() ?? "";
 
-export const getPollutantUnit = (id) =>
-  POLLUTANTS_BY_ID[id]?.unit ?? "µg/m³";
+export const getPollutantUnit = (id) => POLLUTANTS_BY_ID[id]?.unit ?? "µg/m³";

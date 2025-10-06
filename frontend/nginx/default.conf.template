@@ -3,7 +3,8 @@
 add_header Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' blob:; worker-src 'self' blob:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src * data: blob:; connect-src 'self' https://tile.openstreetmap.org https://wft-geo-db.p.rapidapi.com https://nominatim.openstreetmap.org;" always;
 
 server {
-  listen 80;
+  listen ${PORT:-80};
+  listen [::]:${PORT:-80};
   server_name _;
 
   root /usr/share/nginx/html;
@@ -11,7 +12,7 @@ server {
 
   # Todo lo que comience con /api va al backend (puerto 8000)
   location /api/ {
-    proxy_pass http://api:8000/;
+    proxy_pass http://${API_HOST:-api}:${API_PORT:-8000}/;
     proxy_set_header Host $host;
     proxy_set_header X-Real-IP $remote_addr;
     proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;

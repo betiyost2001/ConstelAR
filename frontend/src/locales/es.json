@@ -1,0 +1,137 @@
+{
+  "nav": {
+    "map": "Mapa",
+    "tempo": "Satélite TEMPO",
+    "pollutants": "¿Qué mide cada contaminante?",
+    "about": "Sobre el Proyecto"
+  },
+  "header": {
+    "title": "ConstelAR",
+    "openMenu": "Abrir menú"
+  },
+  "modal": {
+    "button": "¿Qué mide cada contaminante?",
+    "title": "Contaminantes y por qué importan",
+    "no2": {
+      "description": "indicador de emisiones del transporte y centrales eléctricas; agrava enfermedades respiratorias."
+    },
+    "so2": {
+      "description": "proviene de combustibles con azufre y procesos industriales; causa irritación y lluvia ácida."
+    },
+    "o3": {
+      "description": "ozono troposférico formado por reacciones fotoquímicas; afecta pulmones y cultivos."
+    },
+    "hcho": {
+      "description": "formaldehído generado por incendios y procesos industriales; precursor de ozono."
+    },
+    "readMethodology": "Leer metodología"
+  },
+  "pollutantsPage": {
+    "title": "¿Qué mide cada contaminante?",
+    "subtitle": "Una guía rápida para interpretar el mapa y los valores satelitales (TEMPO).",
+    "whatMeasures": "¿Qué mide?",
+    "sources": "Fuentes:",
+    "risks": "Riesgos:",
+    "goodPractices": "Buenas Prácticas:",
+    "pollutants": {
+      "no2": {
+        "label": "Dióxido de nitrógeno",
+        "measures": "Columna troposférica de NO₂ (mol/m²)",
+        "sources": "Transporte, centrales eléctricas, combustión de combustibles fósiles.",
+        "risks": "Irritación y agravamiento del asma; precursor de ozono.",
+        "tips": "Reducir emisiones móviles; evitar ejercicio intenso durante picos."
+      },
+      "so2": {
+        "label": "Dióxido de azufre",
+        "measures": "Columna total de SO₂ (mol/m²)",
+        "sources": "Quema de carbón/petróleo, refinerías, procesos industriales.",
+        "risks": "Irritación respiratoria; lluvia ácida; daño a la vegetación.",
+        "tips": "Combustibles bajos en azufre; control de emisiones industriales."
+      },
+      "o3": {
+        "label": "Ozono Troposférico",
+        "measures": "Columna total de ozono (DU)",
+        "sources": "Formado fotoquímicamente a partir de NOx + VOCs; transporte regional.",
+        "risks": "Disminución de la función pulmonar; afecta a los cultivos.",
+        "tips": "Reducir NOx/VOCs; evitar exteriores durante picos; seguir alertas."
+      },
+      "hcho": {
+        "label": "Formaldehído",
+        "measures": "Columna troposférica de formaldehído (mol/m²)",
+        "sources": "Incendios, procesos petroquímicos, fuentes biogénicas.",
+        "risks": "Irritación; contribuye a la formación de ozono troposférico.",
+        "tips": "Minimizar quema; ventilación; control de emisiones."
+      }
+    }
+  },
+  "tempoPage": {
+    "title": "Satélite TEMPO: La Revolución de la Calidad del Aire",
+    "subtitle": "La misión TEMPO está cambiando cómo vemos el aire que respiramos.",
+    "whyGameChanger": "¿Por qué TEMPO es un cambio de juego?",
+    "description": "Antes de TEMPO, los datos de calidad del aire del espacio estaban disponibles solo una vez al día. TEMPO rompe esta barrera al estar montado en un satélite de comunicaciones comercial en una órbita geoestacionaria. Esta colocación revolucionaria le permite mirar continuamente la misma área grande (América del Norte), capturando instantáneas horarias de contaminación durante todo el día. Este nivel de detalle es crítico para entender las fuentes de contaminación, pronosticar la calidad del aire y proteger la salud pública en todo el continente.",
+    "features": {
+      "geostationary": {
+        "title": "ÓRBITA GEOESTACIONARIA",
+        "description": "TEMPO es el primer instrumento para medir la calidad del aire desde una órbita geoestacionaria, permitiendo cobertura continua y horaria sobre América del Norte."
+      },
+      "fullContinental": {
+        "title": "VISTA CONTINENTAL COMPLETA",
+        "description": "Monitorea la atmósfera desde el Atlántico hasta el Pacífico y desde los trópicos hasta el medio de Canadá, proporcionando un conjunto de datos masivo."
+      },
+      "hourlyData": {
+        "title": "RESOLUCIÓN DE DATOS HORARIOS",
+        "description": "La misión proporciona datos casi en tiempo real, ofreciendo actualizaciones horarias durante el día para rastrear cambios rápidos en la contaminación."
+      },
+      "criticalPollutants": {
+        "title": "CONTAMINANTES CRÍTICOS",
+        "description": "Mide contaminantes clave como NO₂, O₃, SO₂ y Formaldehído (HCHO) para combatir peligros para la salud y el cambio climático."
+      }
+    }
+  },
+  "projectPage": {
+    "title": "Sobre el Proyecto",
+    "subtitle": "ConstelAR es nuestra propuesta para el NASA Space Apps Challenge. Visualizamos mediciones de la misión NASA TEMPO para entender la calidad del aire en tiempo casi real.",
+    "technology": "Tecnología",
+    "frontend": "Frontend: React + Vite + Chakra + MapLibre.",
+    "backend": "Backend: FastAPI; ingerimos datos TEMPO vía Earthdata.",
+    "architecture": "Arquitectura: Hexagonal; endpoints normalizados.",
+    "challengeResources": "Recursos del Desafío",
+    "reader": "Reader (o Vercel): Plataforma utilizada para el despliegue del frontend y distribución global.",
+    "github": "GitHub: Repositorio de código abierto para la colaboración y gestión del proyecto.",
+    "nasaTempo": "NASA TEMPO & Earthdata: Fuentes primarias para datos de calidad del aire.",
+    "weatherApi": "API de Clima/Tiempo: Utilizada para correlacionar eventos meteorológicos con mediciones de contaminantes.",
+    "footer": "Código Abierto 🌎 · Equipo Argentino ConstelAR."
+  },
+  "footer": {
+    "text": "ConstelAR – NASA Space Apps Challenge",
+    "copyright": "© {{year}} Todos los derechos reservados"
+  },
+  "filterBar": {
+    "pollutant": "Contaminante",
+    "search": "Buscar contaminante...",
+    "select": "Seleccionar un contaminante"
+  },
+  "subscriptionForm": {
+    "title": "¿Quieres recibir avisos?",
+    "subtitle": "Te enviaremos un correo para confirmar tu suscripción.",
+    "notification": "Y serás notificado cuando haya nuevas alertas de contaminación en tu ciudad.",
+    "email": "Correo Electrónico",
+    "phone": "Teléfono",
+    "city": "Ciudad",
+    "receiveAlerts": "Recibir Avisos",
+    "selectCity": "Seleccionar una ciudad",
+    "errors": {
+      "invalidEmail": "Correo electrónico inválido",
+      "invalidPhone": "Número de teléfono inválido (mínimo 10 dígitos)",
+      "selectCity": "Seleccionar una ciudad",
+      "noCities": "No se encontraron ciudades que coincidan con \"{{query}}\".",
+      "apiError": "Error al cargar ciudades (posible límite de API). Intenta nuevamente."
+    },
+    "success": "¡Petición enviada! Revisa tu correo para confirmar."
+  },
+  "language": {
+    "select": "Seleccionar idioma",
+    "es": "Español",
+    "en": "English"
+  }
+}

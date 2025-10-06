@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   TEMPO_POLLUTANTS,
   getPollutantLabel,
@@ -6,6 +7,7 @@ import {
 } from "../constants/pollutants";
 
 export default function FilterBar({ pollutant, onChange }) {
+  const { t } = useTranslation();
   const [query, setQuery] = useState("");
 
   // Show search bar if the list is long
@@ -41,13 +43,13 @@ export default function FilterBar({ pollutant, onChange }) {
   const selectId = "pollutant-select";
 
   return (
-    <div className="px-4 md:px-0 py-3 flex gap-4 items-center">
-      <div className="w-full sm:w-80 text-black">
+    <div className="flex items-center gap-4 px-4 py-3 md:px-0">
+      <div className="w-full text-black sm:w-80">
         <label
           htmlFor={selectId}
-          className="block mb-1 text-white text-xl fira-sans-semibold"
+          className="block mb-1 text-xl text-white fira-sans-semibold"
         >
-          Pollutant
+          {t("filterBar.pollutant")}
         </label>
 
         {showSearch && (
@@ -56,9 +58,9 @@ export default function FilterBar({ pollutant, onChange }) {
               type="text"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search pollutant..."
-              className="w-full rounded-md bg-white/95 text-base px-3 py-2 outline-none ring-1 ring-white/20 focus:ring-2 focus:ring-blue-400 fira-sans-regular"
-              aria-label="Search pollutant"
+              placeholder={t("filterBar.search")}
+              className="w-full px-3 py-2 text-base rounded-md outline-none bg-white/95 ring-1 ring-white/20 focus:ring-2 focus:ring-blue-400 fira-sans-regular"
+              aria-label={t("filterBar.search")}
               aria-controls={selectId}
             />
           </div>
@@ -70,11 +72,11 @@ export default function FilterBar({ pollutant, onChange }) {
           value={pollutant ?? ""}
           onChange={handleChange}
           required
-          className="w-full rounded-md bg-white text-xl px-3 py-2 fira-sans-medium outline-none ring-1 ring-white/20 focus:ring-2 focus:ring-blue-400"
+          className="w-full px-3 py-2 text-xl bg-white rounded-md outline-none fira-sans-medium ring-1 ring-white/20 focus:ring-2 focus:ring-blue-400"
           aria-required="true"
         >
           <option value="" disabled>
-            Select a pollutant
+            {t("filterBar.select")}
           </option>
           {filtered.map((item) => {
             const id = String(item?.id ?? "");
