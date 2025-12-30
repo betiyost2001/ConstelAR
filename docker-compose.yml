@@ -18,5 +18,7 @@ services:
         VITE_API_URL: "http://api:8000"
     ports:
       - "8080:80"
+    environment:
+      - PORT=80
     depends_on:
       - api
